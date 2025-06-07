@@ -3,13 +3,12 @@ class UI {
         this.canvas = canvas;
         this.width = canvas.width;
         this.height = canvas.height;
-        
-        // UI colors - enhanced cyberpunk theme
+          // UI colors - enhanced cyberpunk theme
         this.primaryColor = '#00ffff';
         this.secondaryColor = '#ffffff';
         this.accentColor = '#ff6600';
         this.healthColor = '#00ff00';
-        this.healthLowColor = '#ffff00';
+        this.healthLowColor = '#00ff00';
         this.healthCriticalColor = '#ff0000';
         this.backgroundColor = '#000000';
         this.borderColor = '#004466';
@@ -18,11 +17,10 @@ class UI {
         // Animation properties
         this.scoreFlashTimer = 0;
         this.killFlashTimer = 0;
-    }
-      render(ctx, gameData) {
+    }      render(ctx, gameData) {
         this.updateFlashTimers(gameData);
         this.drawHealthBar(ctx, gameData.player);
-        this.drawOverclockBar(ctx, gameData.player);
+        // this.drawOverclockBar(ctx, gameData.player); // Disabled - using HTML UI instead
         this.drawDashIndicator(ctx, gameData.player);
         this.drawStatsPanel(ctx, gameData.score, gameData.kills);
         this.drawGameInfo(ctx, gameData);

@@ -33,8 +33,8 @@ class Enemy {
                 this.speed = 140; // fast and aggressive (increased for larger arena)
                 this.health = 15;
                 this.maxHealth = 15;
-                this.color = '#ffaa00';
-                this.glowColor = '#ffcc44';
+                this.color = '#ff6600';
+                this.glowColor = '#ff8844';
                 this.points = 15;
                 this.aggressionTimer = 0;
                 this.dashCooldown = 2.0; // seconds between dashes
@@ -298,10 +298,9 @@ class Enemy {
         // Background
         ctx.fillStyle = '#444444';
         ctx.fillRect(this.x - barWidth/2, barY, barWidth, barHeight);
-        
-        // Health
+          // Health
         const healthPercent = this.health / this.maxHealth;
-        ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
+        ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#00ff00' : '#ff0000';
         ctx.fillRect(this.x - barWidth/2, barY, barWidth * healthPercent, barHeight);
     }
       drawTypeFeatures(ctx) {
@@ -351,10 +350,9 @@ class Enemy {
                     ctx.moveTo(startX, startY);
                     ctx.lineTo(endX, endY);
                     ctx.stroke();
-                }
-                  // Add pulsing effect when dashing
+                }                  // Add pulsing effect when dashing
                 if (this.isDashing) {
-                    ctx.fillStyle = 'rgba(255, 170, 0, 0.3)';
+                    ctx.fillStyle = 'rgba(255, 102, 0, 0.3)';
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
                     ctx.fill();

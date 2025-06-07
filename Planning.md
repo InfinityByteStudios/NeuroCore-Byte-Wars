@@ -57,6 +57,75 @@ Role: Endgame final boss
 
 Threat Level: Extreme — uses glitch attacks, screen hazards, and phase shifts
 
+🎮 Difficulty Tiers – Final Design
+🟢 Easy
+Target Audience: New/casual players.
+
+Player Health: Starts at 150.
+
+Enemy Behavior: Slower, less health, and lower damage.
+
+Overclock: Charges fast.
+
+Enemy Variety: Simpler enemies early on.
+
+Wave Size: Fewer enemies per wave.
+
+Healing: ✅ You heal during the wave. Gradual regen keeps you alive under pressure.
+
+Other Perks: Forgiving dash cooldowns and early upgrades drop more often.
+
+🟡 Medium
+Target Audience: Standard gameplay.
+
+Player Health: Starts at 100.
+
+Enemy Behavior: Normal speed, health, and damage.
+
+Overclock: Normal charge rate.
+
+Enemy Variety: Balanced.
+
+Wave Size: Normal.
+
+Healing: ✅ You heal after every wave — full heal before the next.
+
+Other Perks: Full upgrade pool unlocked, default leaderboard mode.
+
+🔴 Hard
+Target Audience: Skilled players.
+
+Player Health: Starts at 100.
+
+Enemy Behavior: Faster, tankier, and more aggressive.
+
+Overclock: Slower charge rate.
+
+Enemy Variety: Advanced enemies appear sooner.
+
+Wave Size: Larger waves.
+
+Healing: ⚠️ You only heal every 3 waves.
+
+Other Perks: Bosses are more dangerous with sharper patterns and attack frequency.
+
+☠️ Extreme
+Target Audience: Hardcore players, challenge seekers.
+
+Player Health: Starts at 100 (no bonus).
+
+Enemy Behavior: Very fast, tanky, and relentless.
+
+Overclock: Charges very slowly.
+
+Enemy Variety: Full roster unlocked from the beginning.
+
+Wave Size: Maxed — huge enemy counts.
+
+Healing: ❌ No healing at all. Ever.
+
+Other Perks: Visual/audio glitches intensify over time. Bosses gain extra phases. Minimal UI help. Pure survival.
+
 
 
 🧠 Development Phases for NeuroCore: Byte Wars

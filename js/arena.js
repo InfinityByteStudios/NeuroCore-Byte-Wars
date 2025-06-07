@@ -230,11 +230,10 @@ class Arena {
             // Safe zone on cooldown - red
             fillColor = '#ff4444';
             borderColor = '#ff6666';
-            alpha = 0.1;
-        } else if (this.playerInSafeZone && this.safeZoneTimeRemaining < 3) {
+            alpha = 0.1;        } else if (this.playerInSafeZone && this.safeZoneTimeRemaining < 3) {
             // Warning - time running out
-            fillColor = '#ffaa00';
-            borderColor = '#ffcc44';
+            fillColor = '#ff6600';
+            borderColor = '#ff8844';
             alpha = 0.2;
         }
         

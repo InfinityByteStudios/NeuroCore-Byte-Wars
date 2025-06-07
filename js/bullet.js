@@ -1,11 +1,10 @@
 class Bullet {
-    constructor(x, y, direction, speed = 400) {
-        this.x = x;
+    constructor(x, y, direction, speed = 400) {        this.x = x;
         this.y = y;
         this.direction = direction;
         this.speed = speed;
         this.radius = 3;
-        this.color = '#ffff00';
+        this.color = '#00ff00';
         this.lifetime = 2.0; // seconds
         this.age = 0;
         this.active = true;

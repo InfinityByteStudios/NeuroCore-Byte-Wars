@@ -223,19 +223,17 @@ class VisualEffects {
         let sparkColor = '#ffffff';
         let damageColor = '#ffffff';
         let sparkSize = 'normal';
-        
-        if (damage > 50) {
-            sparkColor = '#ffff00'; // Yellow for high damage
-            damageColor = '#ffff00';
+          if (damage > 50) {
+            sparkColor = '#00ff00'; // Green for high damage
+            damageColor = '#00ff00';
             sparkSize = 'large';
         } else if (damage > 25) {
             sparkColor = '#ff6600'; // Orange for medium damage
             damageColor = '#ff6600';
-        }
-          // Enemy type specific colors
+        }          // Enemy type specific colors
         if (enemyType === 'bitbug') {
-            sparkColor = '#ffaa00';
-            damageColor = '#ffaa00';
+            sparkColor = '#ff6600';
+            damageColor = '#ff6600';
         } else if (enemyType === 'datawisp') {
             sparkColor = '#ff4444';
             damageColor = '#ff4444';
@@ -262,9 +260,8 @@ class VisualEffects {
     onEnemyDestroyed(x, y, enemyType) {
         // Explosion-like effect when enemy is destroyed
         let color = '#ffffff';
-        
-        if (enemyType === 'bitbug') {
-            color = '#ffaa00';
+          if (enemyType === 'bitbug') {
+            color = '#ff6600';
         } else if (enemyType === 'datawisp') {
             color = '#ff4444';
         } else if (enemyType === 'memoryleech') {
@@ -292,20 +289,18 @@ class VisualEffects {
     onWaveComplete(waveNumber) {
         // Celebration effect when wave is completed (reduced)
         this.addScreenShake(1.5, 0.08);
-        console.log(`✅ Wave ${waveNumber} completion effects triggered!`);    }
-
-    onEnemySpawn(x, y, enemyType) {
+        console.log(`✅ Wave ${waveNumber} completion effects triggered!`);    }    onEnemySpawn(x, y, enemyType) {
         // Subtle spawn effect
         let color = '#ffffff';
         if (enemyType === 'bitbug') {
-            color = '#ffaa00';
+            color = '#ff6600';
         } else if (enemyType === 'datawisp') {
             color = '#ff4444';
         } else if (enemyType === 'memoryleech') {
             color = '#8a2be2';
         }
         
-        this.createHitSpark(x, y, color, 'small');    }
+        this.createHitSpark(x, y, color, 'small');}
 
     onOverclockActivated(x, y) {
         // Special effect when player activates overclock (reduced shake)

@@ -8,7 +8,7 @@ class ModernUI {    constructor() {
             healthWarning: document.getElementById('healthWarning'),
             shieldIndicator: document.getElementById('shieldIndicator'),
             
-            // Overclock system
+            // Overclock system - DISABLED VISUALS
             overclockPanel: document.getElementById('overclockPanel'),
             overclockLabel: document.getElementById('overclockLabel'),
             overclockBar: document.getElementById('overclockBar'),
@@ -64,8 +64,7 @@ class ModernUI {    constructor() {
             
             // Upgrade system
             upgradeOverlay: document.getElementById('upgradeOverlay'),
-            upgradeChoices: document.getElementById('upgradeChoices')
-        };
+            upgradeChoices: document.getElementById('upgradeChoices')        };
         
         // UI state
         this.changelogVisible = false;
@@ -153,9 +152,7 @@ class ModernUI {    constructor() {
         } else {
             this.elements.shieldIndicator.style.display = 'none';
         }
-    }
-    
-    updateOverclock(player) {
+    }      updateOverclock(player) {
         const panel = this.elements.overclockPanel;
         const label = this.elements.overclockLabel;
         const bar = this.elements.overclockBar;
@@ -164,15 +161,15 @@ class ModernUI {    constructor() {
         const ready = this.elements.overclockReady;
         const effects = this.elements.overclockEffects;
         
+        // Hide the visual fill bar but keep functionality
+        if (fill) {
+            fill.style.display = 'none';
+        }
+        
         if (player.isOverclocked) {
             // Active overclock state
             panel.classList.add('active');
             label.classList.add('active');
-            bar.classList.add('active');
-            
-            const timePercent = player.overclockTimer / player.overclockDuration;
-            fill.style.width = `${timePercent * 100}%`;
-            fill.className = 'overclock-fill active';
             
             text.textContent = `OVERCLOCK: ${player.overclockTimer.toFixed(1)}s`;
             label.textContent = '◤ NEURAL OVERCLOCK ACTIVE ◥';
@@ -184,21 +181,15 @@ class ModernUI {    constructor() {
             // Charging state
             panel.classList.remove('active');
             label.classList.remove('active');
-            bar.classList.remove('active');
-            
-            const chargePercent = player.overclockCharge / player.overclockMaxCharge;
-            fill.style.width = `${chargePercent * 100}%`;
             
             text.textContent = `CHARGE: ${player.overclockCharge}/${player.overclockMaxCharge}`;
             label.textContent = '◤ NEURAL OVERCLOCK ◥';
             
             effects.style.display = 'none';
             
-            if (chargePercent >= 1.0) {
-                fill.className = 'overclock-fill ready';
+            if (player.overclockCharge >= player.overclockMaxCharge) {
                 ready.style.display = 'block';
             } else {
-                fill.className = 'overclock-fill';
                 ready.style.display = 'none';
             }
         }
@@ -631,7 +622,6 @@ class ModernUI {    constructor() {
             detail: { upgradeId: upgradeId }
         });
         document.dispatchEvent(event);
-        
-        this.hideUpgradeMenu();
+          this.hideUpgradeMenu();
     }
 }
