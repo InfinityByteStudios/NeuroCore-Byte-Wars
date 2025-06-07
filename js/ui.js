@@ -4,42 +4,59 @@ class UI {
         this.width = canvas.width;
         this.height = canvas.height;
         
-        // UI colors
+        // UI colors - enhanced cyberpunk theme
         this.primaryColor = '#00ffff';
         this.secondaryColor = '#ffffff';
+        this.accentColor = '#ff6600';
         this.healthColor = '#00ff00';
         this.healthLowColor = '#ffff00';
         this.healthCriticalColor = '#ff0000';
         this.backgroundColor = '#000000';
         this.borderColor = '#004466';
+        this.panelColor = 'rgba(0, 68, 102, 0.3)';
+        
+        // Animation properties
+        this.scoreFlashTimer = 0;
+        this.killFlashTimer = 0;
     }
     
     render(ctx, gameData) {
+        this.updateFlashTimers(gameData);
         this.drawHealthBar(ctx, gameData.player);
-        this.drawScore(ctx, gameData.score, gameData.kills);
+        this.drawStatsPanel(ctx, gameData.score, gameData.kills);
         this.drawGameInfo(ctx, gameData);
+        this.drawMiniMap(ctx, gameData);
+    }
+    
+    updateFlashTimers(gameData) {
+        // Update flash timers for visual feedback
+        if (this.scoreFlashTimer > 0) this.scoreFlashTimer -= 0.016; // Assuming 60fps
+        if (this.killFlashTimer > 0) this.killFlashTimer -= 0.016;
     }
     
     drawHealthBar(ctx, player) {
-        const barWidth = 200;
-        const barHeight = 20;
+        const barWidth = 250;
+        const barHeight = 24;
         const barX = 20;
         const barY = 20;
         
-        // Health bar background
-        ctx.fillStyle = this.backgroundColor;
-        ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+        // Health panel background with glow
+        ctx.fillStyle = this.panelColor;
+        ctx.fillRect(barX - 8, barY - 8, barWidth + 16, barHeight + 24);
         
-        // Health bar border
-        ctx.strokeStyle = this.borderColor;
+        // Health bar border with cyberpunk glow
+        ctx.strokeStyle = this.primaryColor;
         ctx.lineWidth = 2;
+        ctx.shadowColor = this.primaryColor;
+        ctx.shadowBlur = 8;
         ctx.strokeRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+        ctx.shadowBlur = 0;
         
         // Health bar background (inner)
-        ctx.fillStyle = '#222222';
+        ctx.fillStyle = '#111111';
         ctx.fillRect(barX, barY, barWidth, barHeight);
         
-        // Health bar fill
+        // Health bar fill with gradient
         const healthPercent = player.health / player.maxHealth;
         let healthColor = this.healthColor;
         
@@ -50,58 +67,107 @@ class UI {
         }
         
         const healthWidth = barWidth * healthPercent;
-        ctx.fillStyle = healthColor;
+        
+        // Create gradient for health bar
+        const gradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight);
+        gradient.addColorStop(0, healthColor);
+        gradient.addColorStop(1, this.darkenColor(healthColor, 0.3));
+        
+        ctx.fillStyle = gradient;
         ctx.fillRect(barX, barY, healthWidth, barHeight);
         
-        // Health text
+        // Health text with better positioning
         ctx.fillStyle = this.secondaryColor;
-        ctx.font = '14px Courier New';
+        ctx.font = 'bold 14px Courier New';
         ctx.textAlign = 'center';
         ctx.fillText(`${player.health}/${player.maxHealth}`, barX + barWidth/2, barY + barHeight/2 + 5);
         
-        // Health label
+        // Health label with cyberpunk styling
         ctx.fillStyle = this.primaryColor;
-        ctx.font = '12px Courier New';
+        ctx.font = 'bold 12px Courier New';
         ctx.textAlign = 'left';
-        ctx.fillText('HEALTH', barX, barY - 5);
+        ctx.fillText('◤ NEURAL INTEGRITY ◥', barX, barY - 12);
         
-        // Invulnerability indicator
+        // Critical health warning
+        if (healthPercent <= 0.25) {
+            ctx.fillStyle = this.healthCriticalColor;
+            ctx.font = 'bold 10px Courier New';
+            const warningY = barY + barHeight + 15;
+            ctx.fillText('⚠ CRITICAL DAMAGE ⚠', barX, warningY);
+        }
+        
+        // Invulnerability indicator with improved styling
         if (player.invulnerable) {
-            ctx.fillStyle = '#ffaa00';
-            ctx.font = '10px Courier New';
-            ctx.fillText('INVULNERABLE', barX + barWidth + 10, barY + 15);
+            ctx.fillStyle = this.accentColor;
+            ctx.font = 'bold 11px Courier New';
+            ctx.fillText('◦ SHIELD ACTIVE ◦', barX + barWidth + 15, barY + 15);
         }
     }
     
-    drawScore(ctx, score, kills) {
-        const scoreX = this.width - 150;
-        const scoreY = 30;
+    drawStatsPanel(ctx, score, kills) {
+        const panelX = this.width - 180;
+        const panelY = 15;
+        const panelWidth = 160;
+        const panelHeight = 80;
         
-        // Score display
-        ctx.fillStyle = this.primaryColor;
+        // Stats panel background
+        ctx.fillStyle = this.panelColor;
+        ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+        
+        // Panel border
+        ctx.strokeStyle = this.primaryColor;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+        
+        // Score display with flash effect
+        const scoreColor = this.scoreFlashTimer > 0 ? this.accentColor : this.primaryColor;
+        ctx.fillStyle = scoreColor;
         ctx.font = 'bold 16px Courier New';
         ctx.textAlign = 'right';
-        ctx.fillText(`SCORE: ${score}`, scoreX, scoreY);
+        ctx.fillText(`SCORE: ${score.toLocaleString()}`, panelX + panelWidth - 10, panelY + 25);
         
-        // Kills display
-        ctx.fillStyle = this.secondaryColor;
-        ctx.font = '14px Courier New';
-        ctx.fillText(`KILLS: ${kills}`, scoreX, scoreY + 20);
+        // Kills display with flash effect
+        const killColor = this.killFlashTimer > 0 ? this.accentColor : this.secondaryColor;
+        ctx.fillStyle = killColor;
+        ctx.font = 'bold 14px Courier New';
+        ctx.fillText(`KILLS: ${kills}`, panelX + panelWidth - 10, panelY + 45);
+        
+        // Stats label
+        ctx.fillStyle = this.primaryColor;
+        ctx.font = '10px Courier New';
+        ctx.fillText('◤ COMBAT STATS ◥', panelX + panelWidth - 10, panelY + 65);
     }
     
     drawGameInfo(ctx, gameData) {
-        const infoX = this.width - 150;
-        const infoY = 80;
+        const infoX = this.width - 180;
+        const infoY = 110;
+        
+        // Info panel background
+        ctx.fillStyle = this.panelColor;
+        ctx.fillRect(infoX, infoY, 160, 60);
+        
+        // Panel border
+        ctx.strokeStyle = this.primaryColor;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(infoX, infoY, 160, 60);
         
         ctx.fillStyle = this.secondaryColor;
         ctx.font = '12px Courier New';
         ctx.textAlign = 'right';
         
-        // Enemy count
-        ctx.fillText(`ENEMIES: ${gameData.enemyCount}`, infoX, infoY);
+        // Enemy count with threat indicator
+        const enemyCount = gameData.enemyCount;
+        const threatLevel = enemyCount >= 5 ? 'HIGH' : enemyCount >= 3 ? 'MED' : 'LOW';
+        const threatColor = enemyCount >= 5 ? this.healthCriticalColor : 
+                           enemyCount >= 3 ? this.healthLowColor : this.healthColor;
         
-        // Wave info (placeholder for future)
-        ctx.fillText(`WAVE: 1`, infoX, infoY + 15);
+        ctx.fillStyle = threatColor;
+        ctx.fillText(`THREATS: ${enemyCount} [${threatLevel}]`, infoX + 150, infoY + 20);
+        
+        // Wave info
+        ctx.fillStyle = this.secondaryColor;
+        ctx.fillText(`SECTOR: 01`, infoX + 150, infoY + 35);
+        ctx.fillText(`WAVE: ENDLESS`, infoX + 150, infoY + 50);
         
         // Game status
         if (gameData.player.isDead()) {
@@ -109,43 +175,99 @@ class UI {
         }
     }
     
+    drawMiniMap(ctx, gameData) {
+        const mapSize = 120;
+        const mapX = 20;
+        const mapY = this.height - mapSize - 20;
+        
+        // Mini-map background
+        ctx.fillStyle = this.panelColor;
+        ctx.fillRect(mapX, mapY, mapSize, mapSize);
+        
+        // Mini-map border
+        ctx.strokeStyle = this.primaryColor;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+        
+        // Arena representation
+        ctx.strokeStyle = this.borderColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(mapX + 5, mapY + 5, mapSize - 10, mapSize - 10);
+        
+        // Player dot
+        const playerMapX = mapX + (gameData.player.x / this.width) * mapSize;
+        const playerMapY = mapY + (gameData.player.y / this.height) * mapSize;
+        
+        ctx.fillStyle = this.primaryColor;
+        ctx.beginPath();
+        ctx.arc(playerMapX, playerMapY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Mini-map label
+        ctx.fillStyle = this.primaryColor;
+        ctx.font = '10px Courier New';
+        ctx.textAlign = 'left';
+        ctx.fillText('◤ TACTICAL VIEW ◥', mapX, mapY - 5);
+    }
+    
     drawGameOver(ctx, score, kills) {
-        // Semi-transparent overlay
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        // Semi-transparent overlay with pulse effect
+        const alpha = 0.85 + Math.sin(Date.now() / 200) * 0.1;
+        ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
         ctx.fillRect(0, 0, this.width, this.height);
         
-        // Game Over text
-        ctx.fillStyle = this.healthCriticalColor;
-        ctx.font = 'bold 48px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER', this.width/2, this.height/2 - 50);
+        // Game Over panel
+        const panelWidth = 400;
+        const panelHeight = 200;
+        const panelX = (this.width - panelWidth) / 2;
+        const panelY = (this.height - panelHeight) / 2;
         
-        // Final score
+        ctx.fillStyle = this.panelColor;
+        ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+        
+        ctx.strokeStyle = this.healthCriticalColor;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+        
+        // Game Over text with glow
+        ctx.fillStyle = this.healthCriticalColor;
+        ctx.font = 'bold 36px Courier New';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = this.healthCriticalColor;
+        ctx.shadowBlur = 15;
+        ctx.fillText('◤ NEURAL LINK SEVERED ◥', this.width/2, this.height/2 - 30);
+        ctx.shadowBlur = 0;
+        
+        // Final stats
         ctx.fillStyle = this.primaryColor;
-        ctx.font = 'bold 24px Courier New';
-        ctx.fillText(`FINAL SCORE: ${score}`, this.width/2, this.height/2);
-        ctx.fillText(`KILLS: ${kills}`, this.width/2, this.height/2 + 30);
+        ctx.font = 'bold 18px Courier New';
+        ctx.fillText(`FINAL SCORE: ${score.toLocaleString()}`, this.width/2, this.height/2 + 10);
+        ctx.fillText(`THREATS ELIMINATED: ${kills}`, this.width/2, this.height/2 + 35);
         
         // Restart instruction
         ctx.fillStyle = this.secondaryColor;
-        ctx.font = '16px Courier New';
-        ctx.fillText('Press R to restart', this.width/2, this.height/2 + 80);
+        ctx.font = '14px Courier New';
+        ctx.fillText('◦ Press [R] to reinitialize ◦', this.width/2, this.height/2 + 70);
         
         ctx.textAlign = 'left'; // Reset text alignment
     }
     
-    drawDebugInfo(ctx, gameData) {
-        const debugY = this.height - 90;
-        
-        ctx.fillStyle = this.primaryColor;
-        ctx.font = '12px Courier New';
-        ctx.textAlign = 'left';
-        
-        ctx.fillText(`Player: (${Math.round(gameData.player.x)}, ${Math.round(gameData.player.y)})`, 10, debugY);
-        ctx.fillText(`Aim: ${Math.round(gameData.player.aimDirection * 180 / Math.PI)}°`, 10, debugY + 15);
-        ctx.fillText(`Velocity: (${Math.round(gameData.player.velocity.x)}, ${Math.round(gameData.player.velocity.y)})`, 10, debugY + 30);
-        ctx.fillText(`Bullets: ${gameData.player.bullets.length}`, 10, debugY + 45);
-        ctx.fillText(`Health: ${gameData.player.health}/${gameData.player.maxHealth}`, 10, debugY + 60);
-        ctx.fillText(`Invulnerable: ${gameData.player.invulnerable}`, 10, debugY + 75);
+    // Helper function to darken colors
+    darkenColor(color, factor) {
+        // Simple color darkening - could be enhanced
+        return color.replace(/[0-9a-f]/gi, (match) => {
+            const value = parseInt(match, 16);
+            const darkened = Math.floor(value * (1 - factor));
+            return darkened.toString(16);
+        });
+    }
+    
+    // Trigger flash effects when stats change
+    triggerScoreFlash() {
+        this.scoreFlashTimer = 0.3;
+    }
+    
+    triggerKillFlash() {
+        this.killFlashTimer = 0.3;
     }
 }

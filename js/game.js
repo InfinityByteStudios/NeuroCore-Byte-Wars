@@ -40,9 +40,10 @@ class Game {
             this.update(deltaTime);
             this.render();
         }
-        
-        requestAnimationFrame((time) => this.gameLoop(time));
-    }    update(deltaTime) {
+          requestAnimationFrame((time) => this.gameLoop(time));
+    }
+    
+    update(deltaTime) {
         // Handle input for game controls
         this.handleGameInput();
         
@@ -54,12 +55,14 @@ class Game {
         
         // Update enemies
         this.enemyManager.update(deltaTime, this.player);
-        
-        // Check bullet-enemy collisions
+          // Check bullet-enemy collisions
         const pointsScored = this.enemyManager.checkBulletCollisions(this.player.bullets);
         if (pointsScored > 0) {
             this.score += pointsScored;
             this.kills++;
+            // Trigger UI flash effects for visual feedback
+            this.ui.triggerScoreFlash();
+            this.ui.triggerKillFlash();
         }
         
         // Check player-enemy collisions
@@ -69,9 +72,10 @@ class Game {
             if (playerDied) {
                 this.gameOver = true;
                 console.log('Game Over!');
-            }
-        }
-    }    render() {
+            }        }
+    }
+    
+    render() {
         // Clear canvas
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
