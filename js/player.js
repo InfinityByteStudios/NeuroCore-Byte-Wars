@@ -1,9 +1,8 @@
 class Player {
-    constructor(x, y) {
-        this.x = x;
+    constructor(x, y) {        this.x = x;
         this.y = y;
         this.radius = 15;
-        this.speed = 200; // pixels per second
+        this.speed = 280; // pixels per second (increased for even larger arena)
         
         // Visual properties
         this.color = '#00ffff';
@@ -26,10 +25,8 @@ class Player {
           // Visual effects
         this.flashTimer = 0;
         this.isFlashing = false;
-        this.damageColor = '#ff0000';
-        
-        // Dash system
-        this.dashSpeed = 600; // pixels per second during dash
+        this.damageColor = '#ff0000';          // Dash system
+        this.dashSpeed = 840; // pixels per second during dash (increased for even larger arena)
         this.dashDuration = 0.2; // seconds
         this.dashCooldown = 2.0; // seconds between dashes
         this.dashTimer = 0; // current dash time
@@ -37,21 +34,44 @@ class Player {
         this.isDashing = false;
         this.dashDirection = { x: 0, y: 0 };
         this.dashTrail = []; // For visual trail effect
+        
+        // Overclock system
+        this.overclockCharge = 0; // Current charge (0-100)
+        this.overclockMaxCharge = 100; // Max charge needed
+        this.overclockChargePerKill = 20; // Charge gained per kill
+        this.overclockDuration = 8.0; // seconds when active
+        this.overclockTimer = 0; // remaining overclock time
+        this.isOverclocked = false;
+        this.overclockMultipliers = {
+            fireRate: 2.5, // 2.5x fire rate
+            speed: 1.8, // 1.8x movement speed
+            damage: 2.0, // 2x damage
+            dashCooldown: 0.5 // 50% dash cooldown reduction
+        };
     }    update(deltaTime, input, arena) {
-        // Update dash cooldown
+        // Track action events for visual effects
+        const actionEvents = {
+            dashActivated: false,
+            overclockActivated: false
+        };
+        
+        // Update Overclock system
+        actionEvents.overclockActivated = this.updateOverclock(deltaTime, input);
+        
+        // Update dash cooldown (with Overclock bonus)
+        const dashCooldownRate = this.isOverclocked ? this.overclockMultipliers.dashCooldown : 1.0;
         if (this.dashCooldownTimer > 0) {
-            this.dashCooldownTimer -= deltaTime;
+            this.dashCooldownTimer -= deltaTime * (1 / dashCooldownRate);
         }
         
         // Handle dash input (Space key)
         if (input.isKeyPressed('Space') && this.canDash()) {
-            this.startDash(input);
+            actionEvents.dashActivated = this.startDash(input);
         }
         
         // Update dash state
         this.updateDash(deltaTime);
-        
-        // Get movement input (disabled during dash)
+          // Get movement input (disabled during dash)
         if (!this.isDashing) {
             const movement = input.getMovementVector();
             
@@ -64,8 +84,9 @@ class Player {
             this.velocity.x *= this.friction;
             this.velocity.y *= this.friction;
             
-            // Cap velocity
-            const maxSpeed = this.speed;
+            // Cap velocity (with Overclock bonus)
+            const speedMultiplier = this.isOverclocked ? this.overclockMultipliers.speed : 1.0;
+            const maxSpeed = this.speed * speedMultiplier;
             const currentSpeed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
             if (currentSpeed > maxSpeed) {
                 this.velocity.x = (this.velocity.x / currentSpeed) * maxSpeed;
@@ -111,13 +132,14 @@ class Player {
                 this.invulnerable = false;
             }
         }
-        
-        // Update flash timer
+          // Update flash timer
         if (this.isFlashing) {
             this.flashTimer -= deltaTime;
             if (this.flashTimer <= 0) {
                 this.isFlashing = false;
             }        }
+        
+        return actionEvents; // Return action events for visual effects
     }
     
     // Dash system methods
@@ -145,17 +167,16 @@ class Player {
             this.dashDirection.x /= magnitude;
             this.dashDirection.y /= magnitude;
         }
-        
-        // Start dash
+          // Start dash
         this.isDashing = true;
         this.dashTimer = this.dashDuration;
         this.dashCooldownTimer = this.dashCooldown;
-        
-        // Set dash velocity
+          // Set dash velocity
         this.velocity.x = this.dashDirection.x * this.dashSpeed;
         this.velocity.y = this.dashDirection.y * this.dashSpeed;
         
         console.log('Dash activated!');
+        return true; // Return true to indicate dash was activated
     }
     
     updateDash(deltaTime) {
@@ -195,8 +216,69 @@ class Player {
             if (this.dashTrail[i].alpha <= 0) {
                 this.dashTrail.splice(i, 1);
                 i--;
+            }        }
+    }
+      // Overclock system methods
+    updateOverclock(deltaTime, input) {
+        // Update Overclock timer
+        if (this.isOverclocked) {
+            this.overclockTimer -= deltaTime;
+            if (this.overclockTimer <= 0) {
+                this.deactivateOverclock();
             }
         }
+        
+        // Manual activation with Q key (if charged)
+        if (input.isKeyPressed('KeyQ') && this.canActivateOverclock()) {
+            return this.activateOverclock(); // Return the activation result
+        }
+        
+        return false; // No activation this frame
+    }
+    
+    addOverclockCharge(amount) {
+        this.overclockCharge += amount;
+        if (this.overclockCharge >= this.overclockMaxCharge) {
+            this.overclockCharge = this.overclockMaxCharge;
+        }
+        
+        console.log(`Overclock charge: ${this.overclockCharge}/${this.overclockMaxCharge}`);
+    }
+    
+    canActivateOverclock() {
+        return !this.isOverclocked && this.overclockCharge >= this.overclockMaxCharge;
+    }
+      activateOverclock() {
+        if (!this.canActivateOverclock()) return false;
+        
+        this.isOverclocked = true;
+        this.overclockTimer = this.overclockDuration;
+        this.overclockCharge = 0; // Reset charge after use
+        
+        // Apply Overclock bonuses to weapon
+        if (this.weapon) {
+            this.weapon.applyOverclock(this.overclockMultipliers);
+        }
+        
+        console.log('OVERCLOCK ACTIVATED! Neural systems enhanced!');
+        return true; // Return true to indicate overclock was activated
+    }
+    
+    deactivateOverclock() {
+        this.isOverclocked = false;
+        this.overclockTimer = 0;
+        
+        // Remove Overclock bonuses from weapon
+        if (this.weapon) {
+            this.weapon.removeOverclock();
+        }
+        
+        console.log('Overclock deactivated. Systems returning to normal.');
+    }
+    
+    onKill() {
+        // Called when player kills an enemy
+        this.addOverclockCharge(this.overclockChargePerKill);
     }
     
     shoot() {
@@ -243,13 +325,20 @@ class Player {
     
     isDead() {
         return this.health <= 0;
-    }
-      render(ctx) {
+    }    render(ctx) {
         // Draw dash trail first (behind player)
         this.renderDashTrail(ctx);
         
+        // Draw Overclock effects first (behind player)
+        if (this.isOverclocked) {
+            this.renderOverclockEffects(ctx);
+        }
+        
         // Choose color based on state
         let currentColor = this.color;
+        let glowColor = '#00ffff';
+        let glowIntensity = 0;
+        
         if (this.isFlashing) {
             currentColor = this.damageColor;
         } else if (this.invulnerable) {
@@ -259,43 +348,118 @@ class Player {
             if (Math.floor(flickerTime * flickerRate) % 2 === 0) {
                 currentColor = '#ffffff';
             }
+        } else if (this.isOverclocked) {
+            // Special Overclock color and glow
+            currentColor = '#ff00ff'; // Bright magenta
+            glowColor = '#ff00ff';
+            glowIntensity = 25;
+            
+            // Add pulsing effect during Overclock
+            const pulseRate = 3; // pulses per second
+            const pulseTime = Date.now() / 1000;
+            const pulseFactor = 0.5 + 0.5 * Math.sin(pulseTime * Math.PI * 2 * pulseRate);
+            glowIntensity = 15 + 15 * pulseFactor;
         } else if (this.isDashing) {
             // Special dash color with glow
             currentColor = '#ffffff';
-            ctx.shadowColor = '#00ffff';
-            ctx.shadowBlur = 20;
+            glowColor = '#00ffff';
+            glowIntensity = 20;
+        }
+        
+        // Apply glow effect
+        if (glowIntensity > 0) {
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = glowIntensity;
         }
         
         // Draw player body
         ctx.fillStyle = currentColor;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-          // Reset shadow
+        ctx.fill();        // Reset shadow
         ctx.shadowBlur = 0;
         
-        // Draw aim indicator
-        const aimLength = 25;
+        // Draw aim indicator (enhanced during Overclock)
+        const aimLength = this.isOverclocked ? 35 : 25;
         const aimEndX = this.x + Math.cos(this.aimDirection) * aimLength;
         const aimEndY = this.y + Math.sin(this.aimDirection) * aimLength;
         
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        let aimColor = '#ffffff';
+        if (this.isOverclocked) {
+            aimColor = '#ff00ff';
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 8;
+        }
+        
+        ctx.strokeStyle = aimColor;
+        ctx.lineWidth = this.isOverclocked ? 3 : 2;
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(aimEndX, aimEndY);
         ctx.stroke();
         
         // Draw a small dot at the aim end
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = aimColor;
         ctx.beginPath();
-        ctx.arc(aimEndX, aimEndY, 3, 0, Math.PI * 2);
+        ctx.arc(aimEndX, aimEndY, this.isOverclocked ? 4 : 3, 0, Math.PI * 2);
         ctx.fill();
         
-        // Render bullets
+        // Reset shadow
+        ctx.shadowBlur = 0;
+        
+        // Render bullets (pass Overclock state for enhanced visuals)
         for (let bullet of this.bullets) {
-            bullet.render(ctx);
+            bullet.render(ctx, this.isOverclocked);
         }
+    }
+    
+    renderOverclockEffects(ctx) {
+        // Draw energy rings around player during Overclock
+        const time = Date.now() / 1000;
+        const ringCount = 3;
+        
+        for (let i = 0; i < ringCount; i++) {
+            const ringRadius = this.radius + 15 + i * 8;
+            const rotationSpeed = 2 + i * 0.5; // Different speeds for each ring
+            const rotation = time * rotationSpeed * (i % 2 === 0 ? 1 : -1); // Alternating directions
+            
+            // Draw energy ring segments
+            const segmentCount = 8;
+            const segmentLength = Math.PI / 6; // Arc length of each segment
+            
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 10;
+            
+            for (let j = 0; j < segmentCount; j++) {
+                const segmentAngle = (j / segmentCount) * Math.PI * 2 + rotation;
+                const startAngle = segmentAngle - segmentLength / 2;
+                const endAngle = segmentAngle + segmentLength / 2;
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, ringRadius, startAngle, endAngle);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw energy particles
+        const particleCount = 12;
+        for (let i = 0; i < particleCount; i++) {
+            const particleAngle = (i / particleCount) * Math.PI * 2 + time * 3;
+            const particleDistance = this.radius + 25 + 10 * Math.sin(time * 4 + i);
+            const particleX = this.x + Math.cos(particleAngle) * particleDistance;
+            const particleY = this.y + Math.sin(particleAngle) * particleDistance;
+            
+            ctx.fillStyle = '#ff00ff';
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(particleX, particleY, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.shadowBlur = 0;
     }
     
     renderDashTrail(ctx) {

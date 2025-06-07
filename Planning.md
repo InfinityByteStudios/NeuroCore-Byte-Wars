@@ -1,4 +1,4 @@
-You're helping build a game called NeuroCore Follow the tasks listed in Planning.MD one at a time. After finishing each task, wait for me to say "n" before continuing. Do not skip tasks or do anything extra. Just follow the checklist in order, one step at a time. Be patient and only move on when I say "n". I also want you every time you change something check for bugs/error. DO NOT MAKE TEST FILES. STAY ORGANIZED SPLIT THE CODE IN DIFFERENT FILES.
+You're helping build a game called NeuroCore Follow the tasks listed in Planning.MD one at a time. After finishing each task, wait for me to say "n" before continuing. Do not skip tasks or do anything extra. Just follow the checklist in order, one step at a time. Be patient and only move on when I say "n". I also want you every time you change something check for bugs/error. DO NOT MAKE TEST FILES. STAY ORGANIZED SPLIT THE CODE IN DIFFERENT FILES. Make sure every change is published to Github
 
 🧠 Development Phases for NeuroCore: Byte Wars
 ✅ Phase 1: Core Bootup (Prototype Foundations)

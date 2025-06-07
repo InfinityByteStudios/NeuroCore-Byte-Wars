@@ -1,6 +1,7 @@
 class InputManager {
     constructor() {
         this.keys = {};
+        this.keyPressed = {}; // Track single key presses
         this.mouse = {
             x: 0,
             y: 0,
@@ -14,10 +15,12 @@ class InputManager {
         // Keyboard events
         document.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
+            this.keyPressed[e.code] = true; // Register key as pressed
         });
         
         document.addEventListener('keyup', (e) => {
             this.keys[e.code] = false;
+            this.keyPressed[e.code] = false; // Unregister key press
         });
         
         // Mouse events
@@ -39,6 +42,15 @@ class InputManager {
     
     isKeyPressed(key) {
         return !!this.keys[key];
+    }
+    
+    // Check if a key was just pressed (single press, not held)
+    wasKeyPressed(key) {
+        if (this.keyPressed[key]) {
+            this.keyPressed[key] = false; // Reset so it only triggers once
+            return true;
+        }
+        return false;
     }
     
     getMovementVector() {

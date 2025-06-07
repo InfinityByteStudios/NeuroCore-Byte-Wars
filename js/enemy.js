@@ -19,17 +19,28 @@ class Enemy {
         this.flashTimer = 0;
         this.isFlashing = false;
     }
-    
-    setTypeProperties() {
-        switch (this.type) {
+      setTypeProperties() {        switch (this.type) {
             case 'datawisp':
                 this.radius = 12;
-                this.speed = 50; // slow movement
+                this.speed = 65; // slow movement (increased for larger arena)
                 this.health = 30;
                 this.maxHealth = 30;
                 this.color = '#ff4444';
                 this.glowColor = '#ff6666';
                 this.points = 10;
+                break;
+            case 'bitbug':
+                this.radius = 8;
+                this.speed = 140; // fast and aggressive (increased for larger arena)
+                this.health = 15;
+                this.maxHealth = 15;
+                this.color = '#ffaa00';
+                this.glowColor = '#ffcc44';
+                this.points = 15;
+                this.aggressionTimer = 0;
+                this.dashCooldown = 2.0; // seconds between dashes
+                this.isDashing = false;
+                this.dashSpeed = 350; // much faster during dash (increased for larger arena)
                 break;
             default:
                 this.radius = 10;
@@ -40,29 +51,140 @@ class Enemy {
                 this.glowColor = '#ff3333';
                 this.points = 5;
         }
-    }
-    
-    update(deltaTime, player, arena) {
+    }    update(deltaTime, player, arena) {
         if (!this.active) return;
         
-        // Simple AI: move towards player
-        this.targetX = player.x;
-        this.targetY = player.y;
+        // Update type-specific behavior
+        this.updateTypeBehavior(deltaTime, player);
         
-        // Calculate direction to player
+        // Check if player is protected by safe zone
+        const playerProtected = arena && arena.isSafeZoneActive();
+        
+        if (playerProtected) {
+            // Player is in active safe zone - move aimlessly
+            this.moveAimlessly(deltaTime, arena);
+        } else {
+            // Normal AI: move towards player but avoid safe zone
+            this.targetX = player.x;
+            this.targetY = player.y;
+            
+            // Check if target is in safe zone and adjust if needed
+            if (arena && arena.isInSafeZone(this.targetX, this.targetY)) {
+                // If player is in safe zone, move to edge of safe zone instead
+                const center = arena.getCenter();
+                const dx = this.targetX - center.x;
+                const dy = this.targetY - center.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    // Position at safe zone boundary
+                    const safeZoneEdge = arena.safeZoneRadius + 20; // Stay a bit outside
+                    this.targetX = center.x + (dx / distance) * safeZoneEdge;
+                    this.targetY = center.y + (dy / distance) * safeZoneEdge;
+                }
+            }
+        }
+        
+        // Calculate direction to target
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 0) {
             // Normalize direction and apply speed
-            this.velocity.x = (dx / distance) * this.speed;
-            this.velocity.y = (dy / distance) * this.speed;
+            let currentSpeed = this.speed;
+            
+            // Bit Bug dash behavior
+            if (this.type === 'bitbug' && this.isDashing) {
+                currentSpeed = this.dashSpeed;
+            }
+              this.velocity.x = (dx / distance) * currentSpeed;
+            this.velocity.y = (dy / distance) * currentSpeed;
+        }
+        
+        // Calculate new position
+        let newX = this.x + this.velocity.x * deltaTime;
+        let newY = this.y + this.velocity.y * deltaTime;
+        
+        // Prevent enemy from entering safe zone ONLY when it's available or active
+        if (arena && arena.isInSafeZone(newX, newY) && arena.getSafeZoneStatus().available) {
+            // Push enemy away from safe zone only when zone is available/active
+            const center = arena.getCenter();
+            const dx = newX - center.x;
+            const dy = newY - center.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                const pushDistance = arena.safeZoneRadius + this.radius + 5;
+                newX = center.x + (dx / distance) * pushDistance;
+                newY = center.y + (dy / distance) * pushDistance;
+            }
         }
         
         // Update position
-        this.x += this.velocity.x * deltaTime;
-        this.y += this.velocity.y * deltaTime;
+        this.x = newX;
+        this.y = newY;
+          // Keep enemy in arena bounds
+        if (arena) {
+            const margin = this.radius;
+            this.x = Math.max(arena.borderThickness + margin, 
+                             Math.min(arena.width - arena.borderThickness - margin, this.x));
+            this.y = Math.max(arena.borderThickness + margin, 
+                             Math.min(arena.height - arena.borderThickness - margin, this.y));
+        }
+          // Update flash timer
+        if (this.isFlashing) {
+            this.flashTimer -= deltaTime;
+            if (this.flashTimer <= 0) {
+                this.isFlashing = false;
+            }
+        }
+    }
+    
+    // Move aimlessly when player is protected in safe zone
+    moveAimlessly(deltaTime, arena) {
+        // Initialize random target if we don't have one or reached current target
+        if (!this.aimlessTarget || this.isNearTarget(this.aimlessTarget, 30)) {
+            this.generateAimlessTarget(arena);
+        }
+        
+        // Move towards aimless target
+        this.targetX = this.aimlessTarget.x;
+        this.targetY = this.aimlessTarget.y;
+        
+        // Calculate direction to target
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+            // Move at half speed when aimless
+            const aimlessSpeed = this.speed * 0.5;
+            this.velocity.x = (dx / distance) * aimlessSpeed;
+            this.velocity.y = (dy / distance) * aimlessSpeed;
+        }
+          // Calculate new position
+        let newX = this.x + this.velocity.x * deltaTime;
+        let newY = this.y + this.velocity.y * deltaTime;
+        
+        // Prevent enemy from entering safe zone ONLY when it's available or active
+        if (arena && arena.isInSafeZone(newX, newY) && arena.getSafeZoneStatus().available) {
+            // Push enemy away from safe zone only when zone is available/active
+            const center = arena.getCenter();
+            const dx = newX - center.x;
+            const dy = newY - center.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                const pushDistance = arena.safeZoneRadius + this.radius + 5;
+                newX = center.x + (dx / distance) * pushDistance;
+                newY = center.y + (dy / distance) * pushDistance;
+            }
+        }
+        
+        // Update position
+        this.x = newX;
+        this.y = newY;
         
         // Keep enemy in arena bounds
         if (arena) {
@@ -72,14 +194,31 @@ class Enemy {
             this.y = Math.max(arena.borderThickness + margin, 
                              Math.min(arena.height - arena.borderThickness - margin, this.y));
         }
+    }
+      // Generate a random target for aimless movement
+    generateAimlessTarget(arena) {
+        if (!arena) return;
         
-        // Update flash timer
-        if (this.isFlashing) {
-            this.flashTimer -= deltaTime;
-            if (this.flashTimer <= 0) {
-                this.isFlashing = false;
-            }
-        }
+        let attempts = 0;
+        const safeZoneStatus = arena.getSafeZoneStatus();
+        do {
+            this.aimlessTarget = {
+                x: arena.borderThickness + 50 + Math.random() * (arena.width - 2 * arena.borderThickness - 100),
+                y: arena.borderThickness + 50 + Math.random() * (arena.height - 2 * arena.borderThickness - 100)
+            };
+            attempts++;
+            // Only avoid safe zone if it's available - during cooldown, enemies can enter
+        } while (arena.isInSafeZone(this.aimlessTarget.x, this.aimlessTarget.y) && 
+                 safeZoneStatus.available && attempts < 10);
+    }
+    
+    // Check if we're near a target
+    isNearTarget(target, threshold) {
+        if (!target) return true;
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < threshold;
     }
     
     takeDamage(damage) {
@@ -150,8 +289,7 @@ class Enemy {
         ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
         ctx.fillRect(this.x - barWidth/2, barY, barWidth * healthPercent, barHeight);
     }
-    
-    drawTypeFeatures(ctx) {
+      drawTypeFeatures(ctx) {
         switch (this.type) {
             case 'datawisp':
                 // Draw wispy trail effect
@@ -175,6 +313,65 @@ class Enemy {
                 }
                 
                 ctx.globalAlpha = 1.0;
+                break;
+                
+            case 'bitbug':
+                // Draw aggressive spike features
+                ctx.strokeStyle = this.isFlashing ? '#ffffff' : this.color;
+                ctx.lineWidth = this.isDashing ? 3 : 2;
+                ctx.globalAlpha = this.isDashing ? 1.0 : 0.8;
+                
+                // Draw spikes around the bug
+                const spikeCount = 6;
+                const spikeLength = this.isDashing ? 8 : 5;
+                
+                for (let i = 0; i < spikeCount; i++) {
+                    const angle = (i / spikeCount) * Math.PI * 2;
+                    const startX = this.x + Math.cos(angle) * this.radius;
+                    const startY = this.y + Math.sin(angle) * this.radius;
+                    const endX = startX + Math.cos(angle) * spikeLength;
+                    const endY = startY + Math.sin(angle) * spikeLength;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                }
+                
+                // Add pulsing effect when dashing
+                if (this.isDashing) {
+                    ctx.fillStyle = 'rgba(255, 170, 0, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.globalAlpha = 1.0;
+                break;
+        }
+    }
+    
+    updateTypeBehavior(deltaTime, player) {
+        switch (this.type) {
+            case 'bitbug':
+                // Update aggression timer
+                this.aggressionTimer += deltaTime;
+                
+                // Calculate distance to player
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const distanceToPlayer = Math.sqrt(dx * dx + dy * dy);
+                
+                // Trigger dash when close enough and cooldown is ready
+                if (!this.isDashing && this.aggressionTimer >= this.dashCooldown && distanceToPlayer < 150) {
+                    this.isDashing = true;
+                    this.aggressionTimer = 0;
+                    
+                    // Dash lasts for a short time
+                    setTimeout(() => {
+                        this.isDashing = false;
+                    }, 400); // 0.4 seconds of dashing
+                }
                 break;
         }
     }

@@ -22,6 +22,7 @@ class UI {
       render(ctx, gameData) {
         this.updateFlashTimers(gameData);
         this.drawHealthBar(ctx, gameData.player);
+        this.drawOverclockBar(ctx, gameData.player);
         this.drawDashIndicator(ctx, gameData.player);
         this.drawStatsPanel(ctx, gameData.score, gameData.kills);
         this.drawGameInfo(ctx, gameData);
@@ -100,12 +101,92 @@ class UI {
         if (player.invulnerable) {
             ctx.fillStyle = this.accentColor;
             ctx.font = 'bold 11px Courier New';
-            ctx.fillText('◦ SHIELD ACTIVE ◦', barX + barWidth + 15, barY + 15);        }
+            ctx.fillText('◦ SHIELD ACTIVE ◦', barX + barWidth + 15, barY + 15);
+        }
+    }
+    
+    drawOverclockBar(ctx, player) {
+        const barWidth = 200;
+        const barHeight = 20;
+        const barX = 20;
+        const barY = 50; // Position between health and dash
+        
+        // Overclock panel background with glow
+        ctx.fillStyle = this.panelColor;
+        ctx.fillRect(barX - 6, barY - 6, barWidth + 12, barHeight + 20);
+        
+        // Overclock bar border with special glow
+        const borderColor = player.isOverclocked ? '#ff00ff' : '#ff6600';
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = player.isOverclocked ? 3 : 2;
+        ctx.shadowColor = borderColor;
+        ctx.shadowBlur = player.isOverclocked ? 12 : 6;
+        ctx.strokeRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+        ctx.shadowBlur = 0;
+        
+        // Overclock bar background
+        ctx.fillStyle = '#111111';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Overclock charge/timer bar
+        let fillPercent, fillColor, barText;
+        
+        if (player.isOverclocked) {
+            // Show remaining overclock time
+            fillPercent = player.overclockTimer / player.overclockDuration;
+            fillColor = '#ff00ff'; // Bright magenta for active overclock
+            barText = `OVERCLOCK: ${player.overclockTimer.toFixed(1)}s`;
+        } else {
+            // Show charge progress
+            fillPercent = player.overclockCharge / player.overclockMaxCharge;
+            fillColor = fillPercent >= 1.0 ? '#ffff00' : '#ff6600'; // Yellow when ready, orange while charging
+            barText = `CHARGE: ${player.overclockCharge}/${player.overclockMaxCharge}`;
+        }
+        
+        const fillWidth = barWidth * fillPercent;
+        
+        // Create gradient for overclock bar
+        const gradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight);
+        gradient.addColorStop(0, fillColor);
+        gradient.addColorStop(1, this.darkenColor(fillColor, 0.4));
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(barX, barY, fillWidth, barHeight);
+        
+        // Overclock text
+        ctx.fillStyle = this.secondaryColor;
+        ctx.font = 'bold 11px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(barText, barX + barWidth/2, barY + barHeight/2 + 4);
+        
+        // Overclock label
+        ctx.fillStyle = player.isOverclocked ? '#ff00ff' : '#ff6600';
+        ctx.font = 'bold 10px Courier New';
+        ctx.textAlign = 'left';
+        const label = player.isOverclocked ? '◤ NEURAL OVERCLOCK ACTIVE ◥' : '◤ NEURAL OVERCLOCK ◥';
+        ctx.fillText(label, barX, barY - 10);
+        
+        // Ready indicator
+        if (!player.isOverclocked && player.overclockCharge >= player.overclockMaxCharge) {
+            ctx.fillStyle = '#ffff00';
+            ctx.font = 'bold 9px Courier New';
+            ctx.fillText('⚡ READY - PRESS Q ⚡', barX + barWidth + 15, barY + barHeight/2 + 3);
+        }
+        
+        // Active status effects
+        if (player.isOverclocked) {
+            ctx.fillStyle = '#ff00ff';
+            ctx.font = 'bold 8px Courier New';
+            ctx.textAlign = 'left';
+            const statusY = barY + barHeight + 12;
+            ctx.fillText(`🔥 FIRE RATE: ${player.overclockMultipliers.fireRate}x`, barX, statusY);
+            ctx.fillText(`⚡ SPEED: ${player.overclockMultipliers.speed}x`, barX + 90, statusY);
+        }
     }
     
     drawDashIndicator(ctx, player) {
         const indicatorX = 20;
-        const indicatorY = 60;
+        const indicatorY = 85; // Moved down to make room for Overclock bar
         const indicatorWidth = 150;
         const indicatorHeight = 15;
         
@@ -152,180 +233,165 @@ class UI {
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 10px Courier New';
             ctx.textAlign = 'center';
-            ctx.fillText('DASH READY [SPACE]', indicatorX + indicatorWidth/2, indicatorY + indicatorHeight/2 + 3);
+            ctx.fillText('DASH READY', indicatorX + indicatorWidth/2, indicatorY + indicatorHeight/2 + 3);
         }
         
-        // Label
+        // Dash label
         ctx.fillStyle = this.primaryColor;
-        ctx.font = '10px Courier New';
+        ctx.font = 'bold 9px Courier New';
         ctx.textAlign = 'left';
-        ctx.fillText('◤ MOBILITY CORE ◥', indicatorX, indicatorY - 8);
+        ctx.fillText('◤ NEURAL DASH ◥', indicatorX, indicatorY - 8);
     }
     
     drawStatsPanel(ctx, score, kills) {
-        const panelX = this.width - 180;
-        const panelY = 15;
-        const panelWidth = 160;
+        const panelX = this.width - 200;
+        const panelY = 20;
+        const panelWidth = 180;
         const panelHeight = 80;
         
-        // Stats panel background
+        // Panel background with enhanced glow
         ctx.fillStyle = this.panelColor;
-        ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+        ctx.fillRect(panelX - 5, panelY - 5, panelWidth + 10, panelHeight + 10);
         
-        // Panel border
+        // Panel border with cyberpunk styling
         ctx.strokeStyle = this.primaryColor;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+        ctx.lineWidth = 2;
+        ctx.shadowColor = this.primaryColor;
+        ctx.shadowBlur = 6;
+        ctx.strokeRect(panelX - 2, panelY - 2, panelWidth + 4, panelHeight + 4);
+        ctx.shadowBlur = 0;
         
-        // Score display with flash effect
-        const scoreColor = this.scoreFlashTimer > 0 ? this.accentColor : this.primaryColor;
+        // Panel title
+        ctx.fillStyle = this.primaryColor;
+        ctx.font = 'bold 12px Courier New';
+        ctx.textAlign = 'left';
+        ctx.fillText('◤ COMBAT STATUS ◥', panelX + 10, panelY + 18);
+        
+        // Score with flash effect
+        const scoreColor = this.scoreFlashTimer > 0 ? this.accentColor : this.secondaryColor;
         ctx.fillStyle = scoreColor;
-        ctx.font = 'bold 16px Courier New';
-        ctx.textAlign = 'right';
-        ctx.fillText(`SCORE: ${score.toLocaleString()}`, panelX + panelWidth - 10, panelY + 25);
+        ctx.font = 'bold 14px Courier New';
+        ctx.fillText(`SCORE: ${score}`, panelX + 10, panelY + 40);
         
-        // Kills display with flash effect
+        // Kills with flash effect
         const killColor = this.killFlashTimer > 0 ? this.accentColor : this.secondaryColor;
         ctx.fillStyle = killColor;
         ctx.font = 'bold 14px Courier New';
-        ctx.fillText(`KILLS: ${kills}`, panelX + panelWidth - 10, panelY + 45);
-        
-        // Stats label
-        ctx.fillStyle = this.primaryColor;
-        ctx.font = '10px Courier New';
-        ctx.fillText('◤ COMBAT STATS ◥', panelX + panelWidth - 10, panelY + 65);
+        ctx.fillText(`KILLS: ${kills}`, panelX + 10, panelY + 60);
     }
     
     drawGameInfo(ctx, gameData) {
-        const infoX = this.width - 180;
-        const infoY = 110;
-        
-        // Info panel background
-        ctx.fillStyle = this.panelColor;
-        ctx.fillRect(infoX, infoY, 160, 60);
-        
-        // Panel border
-        ctx.strokeStyle = this.primaryColor;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(infoX, infoY, 160, 60);
-        
-        ctx.fillStyle = this.secondaryColor;
-        ctx.font = '12px Courier New';
-        ctx.textAlign = 'right';
-        
-        // Enemy count with threat indicator
-        const enemyCount = gameData.enemyCount;
-        const threatLevel = enemyCount >= 5 ? 'HIGH' : enemyCount >= 3 ? 'MED' : 'LOW';
-        const threatColor = enemyCount >= 5 ? this.healthCriticalColor : 
-                           enemyCount >= 3 ? this.healthLowColor : this.healthColor;
-        
-        ctx.fillStyle = threatColor;
-        ctx.fillText(`THREATS: ${enemyCount} [${threatLevel}]`, infoX + 150, infoY + 20);
-        
-        // Wave info
-        ctx.fillStyle = this.secondaryColor;
-        ctx.fillText(`SECTOR: 01`, infoX + 150, infoY + 35);
-        ctx.fillText(`WAVE: ENDLESS`, infoX + 150, infoY + 50);
-        
-        // Game status
-        if (gameData.player.isDead()) {
-            this.drawGameOver(ctx, gameData.score, gameData.kills);
+        // Draw additional game information (FPS, etc.)
+        if (gameData.showDebug) {
+            ctx.fillStyle = this.secondaryColor;
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText(`FPS: ${gameData.fps || 60}`, 10, this.height - 20);
         }
     }
     
     drawMiniMap(ctx, gameData) {
-        const mapSize = 120;
-        const mapX = 20;
-        const mapY = this.height - mapSize - 20;
+        const miniMapSize = 120;
+        const miniMapX = this.width - miniMapSize - 20;
+        const miniMapY = this.height - miniMapSize - 20;
         
         // Mini-map background
-        ctx.fillStyle = this.panelColor;
-        ctx.fillRect(mapX, mapY, mapSize, mapSize);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(miniMapX, miniMapY, miniMapSize, miniMapSize);
         
         // Mini-map border
         ctx.strokeStyle = this.primaryColor;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(miniMapX, miniMapY, miniMapSize, miniMapSize);
         
         // Arena representation
-        ctx.strokeStyle = this.borderColor;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(mapX + 5, mapY + 5, mapSize - 10, mapSize - 10);
-        
-        // Player dot
-        const playerMapX = mapX + (gameData.player.x / this.width) * mapSize;
-        const playerMapY = mapY + (gameData.player.y / this.height) * mapSize;
-        
-        ctx.fillStyle = this.primaryColor;
-        ctx.beginPath();
-        ctx.arc(playerMapX, playerMapY, 3, 0, Math.PI * 2);
-        ctx.fill();
+        if (gameData.arena) {
+            const scaleX = miniMapSize / gameData.arena.width;
+            const scaleY = miniMapSize / gameData.arena.height;
+            
+            // Arena border
+            ctx.strokeStyle = this.borderColor;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(miniMapX + 5, miniMapY + 5, miniMapSize - 10, miniMapSize - 10);
+            
+            // Player position
+            const playerX = miniMapX + (gameData.player.x * scaleX);
+            const playerY = miniMapY + (gameData.player.y * scaleY);
+            
+            ctx.fillStyle = this.primaryColor;
+            ctx.beginPath();
+            ctx.arc(playerX, playerY, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Enemy positions (red dots)
+            if (gameData.enemies) {
+                ctx.fillStyle = this.healthCriticalColor;
+                for (const enemy of gameData.enemies) {
+                    const enemyX = miniMapX + (enemy.x * scaleX);
+                    const enemyY = miniMapY + (enemy.y * scaleY);
+                    
+                    ctx.beginPath();
+                    ctx.arc(enemyX, enemyY, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
         
         // Mini-map label
         ctx.fillStyle = this.primaryColor;
-        ctx.font = '10px Courier New';
-        ctx.textAlign = 'left';
-        ctx.fillText('◤ TACTICAL VIEW ◥', mapX, mapY - 5);
+        ctx.font = 'bold 10px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('TACTICAL MAP', miniMapX + miniMapSize/2, miniMapY - 8);
     }
     
-    drawGameOver(ctx, score, kills) {
-        // Semi-transparent overlay with pulse effect
-        const alpha = 0.85 + Math.sin(Date.now() / 200) * 0.1;
-        ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+    // Flash effects for score/kill updates
+    flashScore() {
+        this.scoreFlashTimer = 0.5; // Flash for 0.5 seconds
+    }
+    
+    flashKill() {
+        this.killFlashTimer = 0.5; // Flash for 0.5 seconds
+    }
+    
+    // Utility function to darken colors
+    darkenColor(color, factor) {
+        // Simple color darkening - convert hex to darker shade
+        if (color.startsWith('#')) {
+            const hex = color.slice(1);
+            const r = parseInt(hex.slice(0, 2), 16);
+            const g = parseInt(hex.slice(2, 4), 16);
+            const b = parseInt(hex.slice(4, 6), 16);
+            
+            const newR = Math.floor(r * (1 - factor));
+            const newG = Math.floor(g * (1 - factor));
+            const newB = Math.floor(b * (1 - factor));
+            
+            return `rgb(${newR}, ${newG}, ${newB})`;
+        }
+        return color;
+    }
+    
+    // Game over screen
+    drawGameOverScreen(ctx, score, kills) {
+        // Overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.fillRect(0, 0, this.width, this.height);
         
-        // Game Over panel
-        const panelWidth = 400;
-        const panelHeight = 200;
-        const panelX = (this.width - panelWidth) / 2;
-        const panelY = (this.height - panelHeight) / 2;
-        
-        ctx.fillStyle = this.panelColor;
-        ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
-        
-        ctx.strokeStyle = this.healthCriticalColor;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
-        
-        // Game Over text with glow
+        // Game Over title
         ctx.fillStyle = this.healthCriticalColor;
-        ctx.font = 'bold 36px Courier New';
+        ctx.font = 'bold 48px Courier New';
         ctx.textAlign = 'center';
-        ctx.shadowColor = this.healthCriticalColor;
-        ctx.shadowBlur = 15;
-        ctx.fillText('◤ NEURAL LINK SEVERED ◥', this.width/2, this.height/2 - 30);
-        ctx.shadowBlur = 0;
+        ctx.fillText('SYSTEM FAILURE', this.width/2, this.height/2 - 60);
         
         // Final stats
-        ctx.fillStyle = this.primaryColor;
-        ctx.font = 'bold 18px Courier New';
-        ctx.fillText(`FINAL SCORE: ${score.toLocaleString()}`, this.width/2, this.height/2 + 10);
-        ctx.fillText(`THREATS ELIMINATED: ${kills}`, this.width/2, this.height/2 + 35);
+        ctx.fillStyle = this.secondaryColor;
+        ctx.font = 'bold 24px Courier New';
+        ctx.fillText(`Final Score: ${score}`, this.width/2, this.height/2);
+        ctx.fillText(`Enemies Eliminated: ${kills}`, this.width/2, this.height/2 + 40);
         
         // Restart instruction
-        ctx.fillStyle = this.secondaryColor;
-        ctx.font = '14px Courier New';
-        ctx.fillText('◦ Press [R] to reinitialize ◦', this.width/2, this.height/2 + 70);
-        
-        ctx.textAlign = 'left'; // Reset text alignment
-    }
-    
-    // Helper function to darken colors
-    darkenColor(color, factor) {
-        // Simple color darkening - could be enhanced
-        return color.replace(/[0-9a-f]/gi, (match) => {
-            const value = parseInt(match, 16);
-            const darkened = Math.floor(value * (1 - factor));
-            return darkened.toString(16);
-        });
-    }
-    
-    // Trigger flash effects when stats change
-    triggerScoreFlash() {
-        this.scoreFlashTimer = 0.3;
-    }
-    
-    triggerKillFlash() {
-        this.killFlashTimer = 0.3;
+        ctx.fillStyle = this.primaryColor;
+        ctx.font = 'bold 18px Courier New';
+        ctx.fillText('Press R to restart neural systems', this.width/2, this.height/2 + 100);
     }
 }
