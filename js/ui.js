@@ -19,10 +19,10 @@ class UI {
         this.scoreFlashTimer = 0;
         this.killFlashTimer = 0;
     }
-    
-    render(ctx, gameData) {
+      render(ctx, gameData) {
         this.updateFlashTimers(gameData);
         this.drawHealthBar(ctx, gameData.player);
+        this.drawDashIndicator(ctx, gameData.player);
         this.drawStatsPanel(ctx, gameData.score, gameData.kills);
         this.drawGameInfo(ctx, gameData);
         this.drawMiniMap(ctx, gameData);
@@ -100,8 +100,66 @@ class UI {
         if (player.invulnerable) {
             ctx.fillStyle = this.accentColor;
             ctx.font = 'bold 11px Courier New';
-            ctx.fillText('◦ SHIELD ACTIVE ◦', barX + barWidth + 15, barY + 15);
+            ctx.fillText('◦ SHIELD ACTIVE ◦', barX + barWidth + 15, barY + 15);        }
+    }
+    
+    drawDashIndicator(ctx, player) {
+        const indicatorX = 20;
+        const indicatorY = 60;
+        const indicatorWidth = 150;
+        const indicatorHeight = 15;
+        
+        // Dash indicator background
+        ctx.fillStyle = this.panelColor;
+        ctx.fillRect(indicatorX - 4, indicatorY - 4, indicatorWidth + 8, indicatorHeight + 8);
+        
+        // Border
+        ctx.strokeStyle = this.primaryColor;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(indicatorX - 4, indicatorY - 4, indicatorWidth + 8, indicatorHeight + 8);
+        
+        // Background bar
+        ctx.fillStyle = '#111111';
+        ctx.fillRect(indicatorX, indicatorY, indicatorWidth, indicatorHeight);
+        
+        // Dash status
+        if (player.isDashing) {
+            // Show dash active
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(indicatorX, indicatorY, indicatorWidth, indicatorHeight);
+            
+            ctx.fillStyle = this.primaryColor;
+            ctx.font = 'bold 10px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('DASH ACTIVE', indicatorX + indicatorWidth/2, indicatorY + indicatorHeight/2 + 3);
+        } else if (player.dashCooldownTimer > 0) {
+            // Show cooldown progress
+            const cooldownPercent = 1 - (player.dashCooldownTimer / player.dashCooldown);
+            const progressWidth = indicatorWidth * cooldownPercent;
+            
+            ctx.fillStyle = this.accentColor;
+            ctx.fillRect(indicatorX, indicatorY, progressWidth, indicatorHeight);
+            
+            ctx.fillStyle = this.secondaryColor;
+            ctx.font = '10px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`DASH: ${player.dashCooldownTimer.toFixed(1)}s`, indicatorX + indicatorWidth/2, indicatorY + indicatorHeight/2 + 3);
+        } else {
+            // Dash ready
+            ctx.fillStyle = this.healthColor;
+            ctx.fillRect(indicatorX, indicatorY, indicatorWidth, indicatorHeight);
+            
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 10px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('DASH READY [SPACE]', indicatorX + indicatorWidth/2, indicatorY + indicatorHeight/2 + 3);
         }
+        
+        // Label
+        ctx.fillStyle = this.primaryColor;
+        ctx.font = '10px Courier New';
+        ctx.textAlign = 'left';
+        ctx.fillText('◤ MOBILITY CORE ◥', indicatorX, indicatorY - 8);
     }
     
     drawStatsPanel(ctx, score, kills) {
