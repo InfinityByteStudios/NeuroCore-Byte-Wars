@@ -30,14 +30,17 @@ class ModernUI {    constructor() {
             
             // Stats
             scoreDisplay: document.getElementById('scoreDisplay'),
-            killsDisplay: document.getElementById('killsDisplay'),
-            
+            killsDisplay: document.getElementById('killsDisplay'),            
             // Wave system
             waveTitle: document.getElementById('waveTitle'),
             waveStatus: document.getElementById('waveStatus'),
             waveProgressFill: document.getElementById('waveProgressFill'),
             waveProgressText: document.getElementById('waveProgressText'),
             waveTimer: document.getElementById('waveTimer'),
+            
+            // Upgrades system
+            upgradesList: document.getElementById('upgradesList'),
+            upgradesEmpty: document.getElementById('upgradesEmpty'),
             
             // Mini map
             minimapCanvas: document.getElementById('minimapCanvas'),
@@ -56,14 +59,18 @@ class ModernUI {    constructor() {
             debugToggle: document.getElementById('debugToggle'),
             minimapToggle: document.getElementById('minimapToggle'),
             difficultySelect: document.getElementById('difficultySelect'),
+              // Pause overlay
+            pauseOverlay: document.getElementById('pauseOverlay'),
             
-            // Pause overlay
-            pauseOverlay: document.getElementById('pauseOverlay')
+            // Upgrade system
+            upgradeOverlay: document.getElementById('upgradeOverlay'),
+            upgradeChoices: document.getElementById('upgradeChoices')
         };
         
         // UI state
         this.changelogVisible = false;
         this.settingsVisible = false;
+        this.upgradeVisible = false;
         
         // Get changelog element
         this.changelogOverlay = document.getElementById('changelogOverlay');
@@ -81,9 +88,10 @@ class ModernUI {    constructor() {
         this.updateFlashTimers(deltaTime);
         this.updateHealth(gameData.player);
         this.updateOverclock(gameData.player);
-        this.updateDash(gameData.player);
-        this.updateSafeZone(gameData.arena);
-        this.updateStats(gameData.score, gameData.kills);        this.updateWave(gameData.enemyManager);
+        this.updateDash(gameData.player);        this.updateSafeZone(gameData.arena);
+        this.updateStats(gameData.score, gameData.kills);        
+        this.updateWave(gameData.enemyManager);
+        this.updateUpgrades(gameData.upgradeSystem);
         this.updateMiniMap(gameData);
         
         // Sync settings with game state
@@ -458,6 +466,42 @@ class ModernUI {    constructor() {
         }
     }
     
+    updateUpgrades(upgradeSystem) {
+        if (!upgradeSystem) return;
+        
+        const activeUpgrades = upgradeSystem.getActiveUpgradesList();
+        const upgradesList = this.elements.upgradesList;
+        const upgradesEmpty = this.elements.upgradesEmpty;
+        
+        // Clear existing upgrades display
+        upgradesList.innerHTML = '';
+        
+        if (activeUpgrades.length === 0) {
+            // Show empty state
+            upgradesEmpty.style.display = 'block';
+            upgradesList.style.display = 'none';
+        } else {
+            // Hide empty state and show upgrades
+            upgradesEmpty.style.display = 'none';
+            upgradesList.style.display = 'block';
+            
+            // Add each active upgrade to the display
+            activeUpgrades.forEach(upgrade => {
+                const upgradeElement = document.createElement('div');
+                upgradeElement.className = 'upgrade-item';
+                
+                // Create upgrade content with icon, name, and level
+                upgradeElement.innerHTML = `
+                    <span class="upgrade-icon">${upgrade.icon}</span>
+                    <span class="upgrade-name">${upgrade.name}</span>
+                    <span class="upgrade-level">Lv.${upgrade.level}</span>
+                `;
+                
+                upgradesList.appendChild(upgradeElement);
+            });
+        }
+    }
+    
     // Legacy compatibility methods for canvas-based rendering
     render(ctx, gameData) {
         // This method is called by the game but we handle everything in update()
@@ -539,5 +583,55 @@ class ModernUI {    constructor() {
         if (this.elements.debugToggle.checked !== gameData.showDebug) {
             this.elements.debugToggle.checked = gameData.showDebug;
         }
+    }
+    
+    // Upgrade system functionality
+    showUpgradeMenu(upgradeChoices) {
+        this.upgradeVisible = true;
+        this.populateUpgradeChoices(upgradeChoices);
+        this.elements.upgradeOverlay.classList.remove('hidden');
+    }
+    
+    hideUpgradeMenu() {
+        this.upgradeVisible = false;
+        this.elements.upgradeOverlay.classList.add('hidden');
+    }
+    
+    populateUpgradeChoices(choices) {
+        const container = this.elements.upgradeChoices;
+        container.innerHTML = '';
+        
+        choices.forEach((upgrade, index) => {
+            const choiceElement = document.createElement('div');
+            choiceElement.className = 'upgrade-choice';
+            choiceElement.dataset.upgradeId = upgrade.id;
+            
+            const nextLevel = upgrade.currentLevel + 1;
+            const levelText = nextLevel > 1 ? `Level ${nextLevel}` : 'New';
+            
+            choiceElement.innerHTML = `
+                <div class="upgrade-icon">${upgrade.icon}</div>
+                <div class="upgrade-name">${upgrade.name}</div>
+                <div class="upgrade-description">${upgrade.description}</div>
+                <div class="upgrade-level">${levelText}</div>
+            `;
+            
+            // Add click event listener
+            choiceElement.addEventListener('click', () => {
+                this.selectUpgrade(upgrade.id);
+            });
+            
+            container.appendChild(choiceElement);
+        });
+    }
+    
+    selectUpgrade(upgradeId) {
+        // Dispatch custom event for game to handle
+        const event = new CustomEvent('upgradeSelected', {
+            detail: { upgradeId: upgradeId }
+        });
+        document.dispatchEvent(event);
+        
+        this.hideUpgradeMenu();
     }
 }

@@ -1,5 +1,4 @@
-class EnemyManager {
-    constructor(arena) {
+class EnemyManager {    constructor(arena) {
         this.enemies = [];
         this.arena = arena;
         
@@ -8,7 +7,7 @@ class EnemyManager {
         this.waveState = 'preparing'; // 'preparing', 'spawning', 'active', 'completed'
         this.waveTimer = 0;
         this.preparationTime = 3.0; // seconds before wave starts
-        this.timeBetweenWaves = 5.0; // seconds between waves        // Current wave configuration
+        this.timeBetweenWaves = 5.0; // seconds between waves// Current wave configuration
         this.waveConfig = null;
         this.enemiesToSpawn = [];
         this.spawnTimer = 0;
@@ -23,8 +22,7 @@ class EnemyManager {
         
         // Initialize first wave
         this.setupWave(this.currentWave);
-    }    
-    update(deltaTime, player) {
+    }    update(deltaTime, player) {
         this.waveTimer += deltaTime;
         
         // Handle wave state transitions
@@ -122,20 +120,23 @@ class EnemyManager {
             // Only spawn datawisp enemies in phase 1
             for (let i = 0; i < baseEnemyCount; i++) {
                 config.enemies.push('datawisp');
-            }
-        } else {
+            }        } else {
             // Original complex wave system for later phases
             const baseEnemyCount = Math.min(5 + Math.floor(waveNumber / 2), 18);
             
             // Enemy type distribution changes with wave progression
             const datawispRatio = Math.max(0.6 - (waveNumber * 0.05), 0.2);
-            const bitbugRatio = 1 - datawispRatio;
+            const memoryleechRatio = waveNumber >= 8 ? Math.min(0.15 + (waveNumber * 0.01), 0.3) : 0; // Start appearing at wave 8
+            const bitbugRatio = 1 - datawispRatio - memoryleechRatio;
             
             // Generate enemy list
             for (let i = 0; i < baseEnemyCount; i++) {
+                const rand = Math.random();
                 let enemyType;
-                if (Math.random() < datawispRatio) {
+                if (rand < datawispRatio) {
                     enemyType = 'datawisp';
+                } else if (rand < datawispRatio + memoryleechRatio) {
+                    enemyType = 'memoryleech';
                 } else {
                     enemyType = 'bitbug';
                 }
@@ -146,7 +147,12 @@ class EnemyManager {
             if (waveNumber >= 10) {
                 const bonusEnemies = Math.floor(waveNumber / 5);
                 for (let i = 0; i < bonusEnemies; i++) {
-                    config.enemies.push('bitbug');
+                    // Higher chance of Memory Leech in bonus enemies for late waves
+                    if (waveNumber >= 12 && Math.random() < 0.4) {
+                        config.enemies.push('memoryleech');
+                    } else {
+                        config.enemies.push('bitbug');
+                    }
                 }
             }
         }
@@ -171,8 +177,7 @@ class EnemyManager {
         let spawnX, spawnY;
         let attempts = 0;
         const maxAttempts = 20;
-        
-        // Try to find a spawn position away from both the center ring AND the safe zone
+          // Try to find a spawn position away from the center ring, and away from safe zone only if player is in it
         do {
             spawnX = spawnArea.minX + Math.random() * (spawnArea.maxX - spawnArea.minX);
             spawnY = spawnArea.minY + Math.random() * (spawnArea.maxY - spawnArea.minY);
@@ -183,9 +188,13 @@ class EnemyManager {
                 (spawnY - spawnArea.centerY) ** 2
             );
             
-            // Check if position is outside both center ring AND safe zone
+            // Check if position is outside center ring
             const isOutsideCenterRing = centerDist > spawnArea.centerExclusionRadius;
-            const isOutsideSafeZone = !this.arena.isInSafeZone(spawnX, spawnY);
+            
+            // Only avoid safe zone if player is currently in it
+            const safeZoneStatus = this.arena.getSafeZoneStatus();
+            const shouldAvoidSafeZone = safeZoneStatus.inSafeZone && safeZoneStatus.available;
+            const isOutsideSafeZone = !shouldAvoidSafeZone || !this.arena.isInSafeZone(spawnX, spawnY);
             
             if (isOutsideCenterRing && isOutsideSafeZone) {
                 break;
@@ -230,8 +239,7 @@ class EnemyManager {
         }
           console.log(`👾 Spawned ${enemyType} at (${Math.round(spawnX)}, ${Math.round(spawnY)}) - Wave ${this.currentWave} (${this.enemiesSpawnedThisWave}/${this.waveConfig.enemies.length})`);
     }
-    
-    // Check bullet collisions and return points scored
+      // Check bullet collisions and return points scored
     checkBulletCollisions(bullets, visualEffects = null) {
         let pointsScored = 0;
         let killCount = 0;
@@ -242,8 +250,14 @@ class EnemyManager {
             
             for (let enemy of this.enemies) {
                 if (!enemy.active) continue;
-                  if (enemy.checkCollision(bullet.x, bullet.y, bullet.radius)) {
-                    bullet.active = false;
+                
+                // Skip enemies this bullet has already hit
+                if (bullet.enemiesHit.includes(enemy)) continue;
+                
+                if (enemy.checkCollision(bullet.x, bullet.y, bullet.radius)) {
+                    // Add this enemy to the bullet's hit list
+                    bullet.enemiesHit.push(enemy);
+                    
                     const enemyWasAlive = enemy.health > 0;
                     const points = enemy.takeDamage(bullet.damage); // Use bullet's damage value
                     pointsScored += points;
@@ -268,11 +282,18 @@ class EnemyManager {
                             visualEffects.onEnemyHit(enemy.x, enemy.y, bullet.damage, enemy.type);
                         }
                     }
-                      if (points > 0) {
+                    
+                    if (points > 0) {
                         killCount++;
                         console.log(`${enemy.type} destroyed! +${points} points`);
                     }
-                    break; // Bullet can only hit one enemy
+                    
+                    // Check if bullet should continue piercing
+                    if (bullet.piercing <= 0 || bullet.enemiesHit.length > bullet.piercing) {
+                        bullet.active = false;
+                        break; // Bullet is done piercing
+                    }
+                    // If bullet has piercing left, continue to next enemy
                 }
             }
         }
@@ -354,5 +375,13 @@ class EnemyManager {
             return this.enemies.filter(e => e.active).length;
         }
         return 0;
+    }
+    
+    // Continue to next wave after upgrade selection
+    continueAfterUpgrade() {
+        // Reset the timer to immediately proceed to next wave
+        if (this.waveState === 'completed') {
+            this.waveTimer = this.timeBetweenWaves;
+        }
     }
 }

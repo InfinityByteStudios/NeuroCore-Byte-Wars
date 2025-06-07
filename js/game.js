@@ -8,27 +8,113 @@ class Game {
         
         // Initialize game systems
         this.arena = new Arena(this.canvas.width, this.canvas.height);
-        this.input = new InputManager();
-        this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
+        this.input = new InputManager();        this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         this.enemyManager = new EnemyManager(this.arena);
+        this.upgradeSystem = new UpgradeSystem(); // Add upgrade system
         this.visualEffects = new VisualEffects(); // Visual effects system
-        this.ui = new ModernUI(); // Use the new modern UI system
-          // Game state
+        this.ui = new ModernUI(); // Use the new modern UI system        // Game state
         this.score = 0;
         this.kills = 0;
         this.gameOver = false;
-        this.paused = false; // New pause state
-        this.showDebug = false; // Toggle with D key
-        
-        // Game timing
+        this.paused = true; // Start paused during splash screenthis.showDebug = false; // Toggle with D key
+          // Game timing
         this.lastTime = 0;
         this.running = true;
+        this.gameStarted = false; // Track if game has started
         
+        // Set up upgrade system event listener
+        this.setupUpgradeEventListener();
+        
+        this.showSplashScreen();
+    }    showSplashScreen() {
+        // Show studio splash screen for 3 seconds, then transition to game logo
+        setTimeout(() => {
+            this.showGameLogo();
+        }, 3000);
+    }    showGameLogo() {
+        const studioSplash = document.getElementById('studioSplash');
+        const gameSplash = document.getElementById('gameSplash');
+        
+        if (studioSplash && gameSplash) {
+            // Start fading out studio splash
+            studioSplash.classList.remove('active');
+            studioSplash.classList.add('fade-out');
+            
+            // Start fading in game logo slightly before studio splash finishes
+            setTimeout(() => {
+                gameSplash.classList.add('fade-in');
+            }, 300);
+            
+            // Clean up studio splash after it's fully faded
+            setTimeout(() => {
+                studioSplash.style.display = 'none';
+                studioSplash.classList.remove('fade-out');
+                
+                // Show game logo for 2.5 seconds, then fade to game
+                setTimeout(() => {
+                    this.startGameFromLogo();
+                }, 2500);
+            }, 1000);
+        } else {
+            this.hideSplashScreen();
+        }
+    }    startGameFromLogo() {
+        const gameSplash = document.getElementById('gameSplash');
+        const gameContainer = document.getElementById('gameContainer');
+        
+        if (gameSplash) {
+            // Start fading out game logo
+            gameSplash.classList.remove('fade-in');
+            gameSplash.classList.add('fade-out');
+            
+            // Start showing game container with fade slightly before logo finishes
+            setTimeout(() => {
+                if (gameContainer) {
+                    gameContainer.style.opacity = '0';
+                    gameContainer.style.display = 'block';
+                    gameContainer.style.transition = 'opacity 1s ease-in-out';
+                    
+                    // Fade in game container
+                    setTimeout(() => {
+                        gameContainer.style.opacity = '1';
+                    }, 50);
+                }
+            }, 300);
+            
+            // Clean up game splash after fade completes
+            setTimeout(() => {
+                gameSplash.style.display = 'none';
+                gameSplash.classList.remove('fade-out');
+                this.start();
+            }, 1000);
+        } else {
+            this.start();
+        }
+    }hideSplashScreen() {
+        // This method is now only used as a fallback if splash elements are missing
+        const studioSplash = document.getElementById('studioSplash');
+        const gameSplash = document.getElementById('gameSplash');
+        
+        if (studioSplash) studioSplash.style.display = 'none';
+        if (gameSplash) gameSplash.style.display = 'none';
         this.start();
-    }
-      start() {
-        console.log('NeuroCore: Byte Wars - Starting...');
-        this.gameLoop(0);
+    }start() {
+        this.gameStarted = true;
+        this.paused = false; // Unpause the game when it starts
+        
+        // Show the game container if it's not already visible
+        const gameContainer = document.getElementById('gameContainer');
+        if (gameContainer && gameContainer.style.display === 'none') {
+            gameContainer.style.display = 'block';
+        }
+        
+        // Ensure canvas is properly sized
+        this.setupCanvasResize();
+          // Give canvas focus for input
+        this.canvas.focus();
+        
+        // Start the game loop
+        requestAnimationFrame((time) => this.gameLoop(time));
     }
       setupCanvasResize() {
         // Function to resize canvas to fill viewport
@@ -57,10 +143,7 @@ class Game {
             // Reposition player to center if it exists
             if (this.player) {
                 this.player.x = viewportWidth / 2;
-                this.player.y = viewportHeight / 2;
-            }
-            
-            console.log(`Canvas resized to: ${viewportWidth}x${viewportHeight}`);
+                this.player.y = viewportHeight / 2;            }
         };
         
         // Initial resize
@@ -73,32 +156,40 @@ class Game {
         window.addEventListener('orientationchange', () => {
             setTimeout(resizeCanvas, 100); // Small delay to ensure proper dimensions
         });
-    }
-      gameLoop(currentTime) {
+    }    gameLoop(currentTime) {
         if (!this.running) return;
+        
+        // Initialize lastTime on first frame
+        if (this.lastTime === 0) {
+            this.lastTime = currentTime;
+            requestAnimationFrame((time) => this.gameLoop(time));
+            return;
+        }
         
         // Calculate delta time in seconds
         const deltaTime = (currentTime - this.lastTime) / 1000;
-        this.lastTime = currentTime;        // Skip first frame (deltaTime would be too large)
-        if (deltaTime > 0.1) return;
+        this.lastTime = currentTime;
+
+        // Cap delta time to prevent huge jumps
+        const cappedDeltaTime = Math.min(deltaTime, 0.033); // Cap at ~30 FPS minimum
         
         // Always handle input even when paused (for pause/unpause controls)
         this.handleGameInput();
         
         // Only update game systems if not paused
         if (!this.paused) {
-            this.update(deltaTime);
+            this.update(cappedDeltaTime);
         }
         
         this.render();
-        
-        // Update UI with proper deltaTime
+          // Update UI with proper deltaTime
         const gameData = {
             player: this.player,
             score: this.score,
             kills: this.kills,
             enemyCount: this.enemyManager.getActiveEnemyCount(),
             enemyManager: this.enemyManager,
+            upgradeSystem: this.upgradeSystem,
             gameOver: this.gameOver,
             paused: this.paused,
             showDebug: this.showDebug,
@@ -151,13 +242,15 @@ class Game {
             
             // Trigger visual effects for player damage
             this.visualEffects.onPlayerHit(this.player.x, this.player.y, damage);
-            
-            if (playerDied) {
+              if (playerDied) {
                 this.gameOver = true;
                 console.log('Game Over!');
             }
         }
-    }    render() {
+        
+        // Check for wave completion to show upgrade menu
+        this.checkForWaveCompletion();
+    }render() {
         // Apply screen shake offset
         const shakeOffset = this.visualEffects.getScreenShakeOffset();
         this.ctx.save();
@@ -192,6 +285,11 @@ class Game {
         // Restore canvas transform
         this.ctx.restore();
     }    handleGameInput() {
+        // Don't handle input if game hasn't started yet
+        if (!this.gameStarted) {
+            return;
+        }
+        
         // Toggle debug display
         if (this.input.wasKeyPressed('KeyD')) {
             this.showDebug = !this.showDebug;
@@ -235,17 +333,18 @@ class Game {
         if (this.gameOver && this.input.isKeyPressed('KeyR')) {
             this.restartGame();
         }
-    }
-      restartGame() {        console.log('Restarting game...');
+    }    restartGame() {
         
         // Reset player
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         
         // Reset enemy manager
         this.enemyManager = new EnemyManager(this.arena);
-        
-        // Clear visual effects
+          // Clear visual effects
         this.visualEffects.clear();
+        
+        // Reset upgrade system
+        this.upgradeSystem.reset();
         
         // Reset game state
         this.score = 0;
@@ -327,6 +426,66 @@ class Game {
         this.ctx.fillText(`Bullets: ${this.player.bullets.length}`, 10, this.canvas.height - 45);
         this.ctx.fillText(`Enemies: ${this.enemyManager.getActiveEnemyCount()}`, 10, this.canvas.height - 30);
         this.ctx.fillText(`Score: ${this.score} | Kills: ${this.kills}`, 10, this.canvas.height - 15);
+    }
+    
+    setupUpgradeEventListener() {
+        document.addEventListener('upgradeSelected', (event) => {
+            this.handleUpgradeSelected(event.detail.upgradeId);
+        });
+    }
+    
+    handleUpgradeSelected(upgradeId) {
+        console.log(`🔧 Player selected upgrade: ${upgradeId}`);
+        
+        // Apply the upgrade
+        const effects = this.upgradeSystem.applyUpgrade(upgradeId);
+        
+        // Apply effects to player
+        this.applyUpgradeEffectsToPlayer(effects);
+        
+        // Resume the game
+        this.paused = false;
+        
+        // Continue with next wave
+        this.enemyManager.continueAfterUpgrade();
+    }
+      applyUpgradeEffectsToPlayer(effects) {
+        // Apply individual upgrade effects to player
+        this.player.applyUpgradeEffects(effects);
+        
+        console.log(`🎯 Applied upgrade effects:`, effects);
+    }
+    
+    checkForWaveCompletion() {
+        const waveState = this.enemyManager.getWaveState();
+        
+        // Check if wave just completed and we haven't shown upgrade menu yet
+        if (waveState === 'completed' && !this.upgradeSystem.shouldShowUpgradeMenu() && !this.paused) {
+            const currentWave = this.enemyManager.getCurrentWave();
+            
+            // Show upgrade menu after every wave (except first preparation)
+            if (currentWave > 1) {
+                this.showUpgradeMenu();
+            }
+        }
+    }
+    
+    showUpgradeMenu() {
+        console.log('🎮 Showing upgrade menu...');
+        
+        // Generate upgrade choices
+        const choices = this.upgradeSystem.generateUpgradeChoices();
+        
+        if (choices.length > 0) {
+            // Mark that we're showing the upgrade menu
+            this.upgradeSystem.setUpgradeMenuVisible(true);
+            
+            // Pause the game
+            this.paused = true;
+            
+            // Show the upgrade menu in UI
+            this.ui.showUpgradeMenu(choices);
+        }
     }
 }
 

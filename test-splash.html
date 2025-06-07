@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splash Screen Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #101216;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 2000;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Debug Info -->
+    <div class="debug-info" id="debugInfo">
+        <div id="currentState">State: Initial</div>
+        <div id="timer">Timer: 0s</div>
+    </div>
+
+    <!-- Studio Splash Screen -->
+    <div id="studioSplash" class="splash-screen active">
+        <div class="splash-content">
+            <img src="assets/InfinityByte Studios 1920×1080.png" alt="InfinityByte Studio" class="splash-logo">
+            <div class="splash-subtitle">Presents</div>
+            <div class="splash-loading">
+                <div class="loading-squares">
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Logo Splash Screen -->
+    <div id="gameSplash" class="splash-screen">
+        <div class="splash-content">
+            <img src="assets/NeuroCore Byte Wars Logo.png" alt="NeuroCore Byte Wars" class="splash-logo game-logo">
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div id="gameArea" style="display: none; padding: 20px; text-align: center;">
+        <h1>Game Started!</h1>
+        <p>Splash sequence completed successfully</p>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+        let currentState = 'Studio Splash';
+        
+        function updateDebug() {
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            document.getElementById('timer').textContent = `Timer: ${elapsed}s`;
+            document.getElementById('currentState').textContent = `State: ${currentState}`;
+        }
+        
+        setInterval(updateDebug, 100);
+        
+        function showSplashScreen() {
+            currentState = 'Studio Splash (3s)';
+            // Show studio splash screen for 3 seconds, then transition to game logo
+            setTimeout(() => {
+                showGameLogo();
+            }, 3000);
+        }        function showGameLogo() {
+            currentState = 'Transitioning to Game Logo';
+            const studioSplash = document.getElementById('studioSplash');
+            const gameSplash = document.getElementById('gameSplash');
+            
+            if (studioSplash && gameSplash) {
+                // Fade out studio splash
+                studioSplash.classList.remove('active');
+                studioSplash.classList.add('fade-out');
+                
+                // Wait for studio fade out, then show game logo
+                setTimeout(() => {
+                    currentState = 'Game Logo (2.5s)';
+                    studioSplash.style.display = 'none';
+                    studioSplash.classList.remove('fade-out');
+                    
+                    // Show game logo with fade-in
+                    gameSplash.classList.add('active');
+                    
+                    // Show game logo for 2.5 seconds, then fade to game
+                    setTimeout(() => {
+                        startGameFromLogo();
+                    }, 2500);
+                }, 1000);
+            } else {
+                startGame();
+            }
+        }
+
+        function startGameFromLogo() {
+            currentState = 'Transitioning to Game';
+            const gameSplash = document.getElementById('gameSplash');
+            
+            if (gameSplash) {
+                // Fade out game logo
+                gameSplash.classList.remove('active');
+                gameSplash.classList.add('fade-out');
+                
+                // Wait for fade out animation to complete, then start game
+                setTimeout(() => {
+                    gameSplash.style.display = 'none';
+                    gameSplash.classList.remove('fade-out');
+                    startGame();
+                }, 1000);
+            } else {
+                startGame();
+            }
+        }
+
+        function startGame() {
+            currentState = 'Game Started';
+            document.getElementById('gameArea').style.display = 'block';
+        }
+
+        // Start the splash sequence
+        showSplashScreen();
+    </script>
+</body>
+</html>

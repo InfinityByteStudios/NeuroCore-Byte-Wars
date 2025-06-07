@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splash Debug - NeuroCore Byte Wars</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .debug-overlay {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.9);
+            color: #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            border: 1px solid #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-overlay">
+        <div>Current State: <span id="currentState">Initializing</span></div>
+        <div>Timer: <span id="timer">0.0s</span></div>
+        <div>Studio Splash: <span id="studioStatus">visible</span></div>
+        <div>Game Splash: <span id="gameStatus">hidden</span></div>
+    </div>
+
+    <!-- Studio Splash Screen (InfinityByte) -->
+    <div id="studioSplash" class="splash-screen active">
+        <div class="splash-content">
+            <img src="assets/InfinityByte Studios 1920×1080.png" alt="InfinityByte Studio" class="splash-logo">
+            <div class="splash-subtitle">Presents</div>
+            <div class="splash-loading">
+                <div class="loading-squares">
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Logo Splash Screen (NeuroCore) -->
+    <div id="gameSplash" class="splash-screen">
+        <div class="splash-content">
+            <img src="assets/NeuroCore Byte Wars Logo.png" alt="NeuroCore Byte Wars" class="splash-logo game-logo">
+        </div>
+    </div>
+
+    <div id="gameContainer" style="display: none;">
+        <div style="text-align: center; padding: 50px; color: white; font-family: monospace;">
+            <h1>GAME STARTED</h1>
+            <p>Splash sequence completed successfully!</p>
+        </div>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+        
+        function updateDebug() {
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            document.getElementById('timer').textContent = `${elapsed}s`;
+            
+            const studioEl = document.getElementById('studioSplash');
+            const gameEl = document.getElementById('gameSplash');
+            
+            const studioVisible = studioEl && studioEl.classList.contains('active');
+            const gameVisible = gameEl && gameEl.classList.contains('active');
+            
+            document.getElementById('studioStatus').textContent = studioVisible ? 'VISIBLE' : 'hidden';
+            document.getElementById('gameStatus').textContent = gameVisible ? 'VISIBLE' : 'hidden';
+        }
+        
+        setInterval(updateDebug, 100);
+        
+        function showSplashScreen() {
+            document.getElementById('currentState').textContent = 'Studio Splash (3s)';
+            console.log('Starting splash sequence: Studio Splash for 3 seconds');
+            
+            // Show studio splash screen for 3 seconds, then transition to game logo
+            setTimeout(() => {
+                showGameLogo();
+            }, 3000);
+        }
+
+        function showGameLogo() {
+            document.getElementById('currentState').textContent = 'Transitioning to NeuroCore Logo';
+            console.log('Transitioning from Studio to NeuroCore logo');
+            
+            const studioSplash = document.getElementById('studioSplash');
+            const gameSplash = document.getElementById('gameSplash');
+            
+            if (studioSplash && gameSplash) {
+                // Fade out studio splash
+                studioSplash.classList.remove('active');
+                studioSplash.classList.add('fade-out');
+                
+                // Wait for studio fade out, then show game logo
+                setTimeout(() => {
+                    document.getElementById('currentState').textContent = 'NeuroCore Logo (2.5s)';
+                    console.log('Showing NeuroCore logo for 2.5 seconds');
+                    
+                    studioSplash.style.display = 'none';
+                    studioSplash.classList.remove('fade-out');
+                    
+                    // Show game logo with fade-in
+                    gameSplash.classList.add('active');
+                    
+                    // Show game logo for 2.5 seconds, then fade to game
+                    setTimeout(() => {
+                        startGameFromLogo();
+                    }, 2500);
+                }, 1000);
+            } else {
+                console.error('Missing splash elements!');
+                startGame();
+            }
+        }
+
+        function startGameFromLogo() {
+            document.getElementById('currentState').textContent = 'Transitioning to Game';
+            console.log('Transitioning from NeuroCore logo to game');
+            
+            const gameSplash = document.getElementById('gameSplash');
+            
+            if (gameSplash) {
+                // Fade out game logo
+                gameSplash.classList.remove('active');
+                gameSplash.classList.add('fade-out');
+                
+                // Wait for fade out animation to complete, then start game
+                setTimeout(() => {
+                    gameSplash.style.display = 'none';
+                    gameSplash.classList.remove('fade-out');
+                    startGame();
+                }, 1000);
+            } else {
+                startGame();
+            }
+        }
+
+        function startGame() {
+            document.getElementById('currentState').textContent = 'Game Started!';
+            console.log('Game started successfully!');
+            document.getElementById('gameContainer').style.display = 'block';
+        }
+
+        // Start the splash sequence
+        console.log('Initializing splash sequence...');
+        showSplashScreen();
+    </script>
+</body>
+</html>

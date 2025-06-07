@@ -232,31 +232,33 @@ class VisualEffects {
             sparkColor = '#ff6600'; // Orange for medium damage
             damageColor = '#ff6600';
         }
-        
-        // Enemy type specific colors
+          // Enemy type specific colors
         if (enemyType === 'bitbug') {
             sparkColor = '#ffaa00';
             damageColor = '#ffaa00';
         } else if (enemyType === 'datawisp') {
             sparkColor = '#ff4444';
             damageColor = '#ff4444';
+        } else if (enemyType === 'memoryleech') {
+            sparkColor = '#8a2be2';
+            damageColor = '#8a2be2';
         }
-          this.createHitSpark(x, y, sparkColor, sparkSize);
+        
+        this.createHitSpark(x, y, sparkColor, sparkSize);
         this.createDamageNumber(x, y - 10, damage, damageColor);
         
         // Screen shake based on damage (reduced intensity and duration)
         const shakeIntensity = Math.min(4, damage * 0.08);
-        this.addScreenShake(shakeIntensity, 0.05);
-    }
-      onPlayerHit(x, y, damage) {
+        this.addScreenShake(shakeIntensity, 0.05);    }
+
+    onPlayerHit(x, y, damage) {
         // Red effects for player damage
         this.createHitSpark(x, y, '#ff0000', 'large');
         this.createDamageNumber(x, y - 15, damage, '#ff0000');
         
         // Reduced screen shake for player damage
-        this.addScreenShake(6, 0.15);
-    }
-    
+        this.addScreenShake(6, 0.15);    }
+
     onEnemyDestroyed(x, y, enemyType) {
         // Explosion-like effect when enemy is destroyed
         let color = '#ffffff';
@@ -265,6 +267,8 @@ class VisualEffects {
             color = '#ffaa00';
         } else if (enemyType === 'datawisp') {
             color = '#ff4444';
+        } else if (enemyType === 'memoryleech') {
+            color = '#8a2be2';
         }
         
         // Create multiple spark bursts
@@ -273,11 +277,12 @@ class VisualEffects {
                 this.createHitSpark(x + (Math.random() - 0.5) * 10, 
                                   y + (Math.random() - 0.5) * 10, 
                                   color, 'large');
-            }, i * 50);        }
+            }, i * 50);
+        }
         
-        this.addScreenShake(3, 0.08);
-    }
-      // Special effect presets
+        this.addScreenShake(3, 0.08);    }
+
+    // Special effect presets
     onWaveStart(waveNumber) {
         // Screen flash and shake when a new wave starts (reduced)
         this.addScreenShake(2.5, 0.1);
@@ -287,9 +292,8 @@ class VisualEffects {
     onWaveComplete(waveNumber) {
         // Celebration effect when wave is completed (reduced)
         this.addScreenShake(1.5, 0.08);
-        console.log(`✅ Wave ${waveNumber} completion effects triggered!`);
-    }
-    
+        console.log(`✅ Wave ${waveNumber} completion effects triggered!`);    }
+
     onEnemySpawn(x, y, enemyType) {
         // Subtle spawn effect
         let color = '#ffffff';
@@ -297,11 +301,13 @@ class VisualEffects {
             color = '#ffaa00';
         } else if (enemyType === 'datawisp') {
             color = '#ff4444';
+        } else if (enemyType === 'memoryleech') {
+            color = '#8a2be2';
         }
         
-        this.createHitSpark(x, y, color, 'small');
-    }
-      onOverclockActivated(x, y) {
+        this.createHitSpark(x, y, color, 'small');    }
+
+    onOverclockActivated(x, y) {
         // Special effect when player activates overclock (reduced shake)
         this.createHitSpark(x, y, '#ff00ff', 'large');
         this.addScreenShake(2, 0.1);

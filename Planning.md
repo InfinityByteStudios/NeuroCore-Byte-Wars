@@ -1,5 +1,64 @@
 You're helping build a game called NeuroCore Follow the tasks listed in Planning.MD one at a time. After finishing each task, wait for me to say "n" before continuing. Do not skip tasks or do anything extra. Just follow the checklist in order, one step at a time. Be patient and only move on when I say "n". I also want you every time you change something check for bugs/error. DO NOT MAKE TEST FILES. STAY ORGANIZED SPLIT THE CODE IN DIFFERENT FILES. Make sure every change is published to Github
 
+🧠 Enemy Damage Breakdown – NeuroCore: Byte Wars
+1. Data Wisp
+
+Damage: 5 HP per hit
+
+Role: Basic testing enemy
+
+Threat Level: Very low — meant to teach movement and aiming
+
+2. Bit Bug
+
+Damage: 10 HP per hit
+
+Role: Fast swarm melee attacker
+
+Threat Level: Moderate — relies on speed and numbers
+
+3. Memory Leech
+
+Damage: 2 HP per second while latched
+
+Role: Energy-draining parasite
+
+Threat Level: High if not removed quickly — drains you over time instead of burst
+
+4. Syntax Breaker
+
+Damage: 8 HP per hit
+
+Role: Control-disrupting enemy
+
+Threat Level: Annoying — causes light damage but also scrambles input when close
+
+5. Corrupted Protocol (Boss)
+
+Damage: 15 to 25 HP per hit, depending on the attack phase
+
+Role: First major boss
+
+Threat Level: High — heavy hits, telegraphed attacks, multi-phase encounter
+
+6. The Forked (Enemy Faction)
+
+Damage: 12 to 18 HP per hit, varies by form
+
+Role: Adaptive enemies that change tactics based on your build
+
+Threat Level: High — smart enemies with moderate to high damage
+
+7. NeuroFork (Final Boss)
+
+Damage: 20 to 35 HP per hit, based on the attack type
+
+Role: Endgame final boss
+
+Threat Level: Extreme — uses glitch attacks, screen hazards, and phase shifts
+
+
+
 🧠 Development Phases for NeuroCore: Byte Wars
 ✅ Phase 1: Core Bootup (Prototype Foundations)
 Establish the mechanical heartbeat of NeuroCore: Byte Wars.

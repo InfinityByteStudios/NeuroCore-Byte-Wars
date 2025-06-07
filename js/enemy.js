@@ -28,8 +28,7 @@ class Enemy {
                 this.color = '#ff4444';
                 this.glowColor = '#ff6666';
                 this.points = 10;
-                break;
-            case 'bitbug':
+                break;            case 'bitbug':
                 this.radius = 8;
                 this.speed = 140; // fast and aggressive (increased for larger arena)
                 this.health = 15;
@@ -41,6 +40,19 @@ class Enemy {
                 this.dashCooldown = 2.0; // seconds between dashes
                 this.isDashing = false;
                 this.dashSpeed = 350; // much faster during dash (increased for larger arena)
+                break;
+            case 'memoryleech':
+                this.radius = 15;
+                this.speed = 50; // slower than datawisp
+                this.health = 80;
+                this.maxHealth = 80;
+                this.color = '#8a2be2'; // Purple color
+                this.glowColor = '#9932cc';
+                this.points = 25;
+                this.drainRange = 120; // Range to drain player energy
+                this.drainRate = 0.3; // How much energy to drain per second
+                this.pulseTimer = 0;
+                this.isDraining = false;
                 break;
             default:
                 this.radius = 10;
@@ -93,8 +105,7 @@ class Enemy {
         if (distance > 0) {
             // Normalize direction and apply speed
             let currentSpeed = this.speed;
-            
-            // Bit Bug dash behavior
+              // Bit Bug dash behavior
             if (this.type === 'bitbug' && this.isDashing) {
                 currentSpeed = this.dashSpeed;
             }
@@ -106,18 +117,21 @@ class Enemy {
         let newX = this.x + this.velocity.x * deltaTime;
         let newY = this.y + this.velocity.y * deltaTime;
         
-        // Prevent enemy from entering safe zone ONLY when it's available or active
-        if (arena && arena.isInSafeZone(newX, newY) && arena.getSafeZoneStatus().available) {
-            // Push enemy away from safe zone only when zone is available/active
+        // Prevent enemy from touching safe zone border ONLY when player is in the safe zone
+        if (arena && arena.getSafeZoneStatus().inSafeZone && arena.getSafeZoneStatus().available) {
+            // Check if enemy would be too close to safe zone border
             const center = arena.getCenter();
             const dx = newX - center.x;
             const dy = newY - center.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
+            const minDistanceFromBorder = arena.safeZoneRadius + this.radius + 5;
             
-            if (distance > 0) {
-                const pushDistance = arena.safeZoneRadius + this.radius + 5;
-                newX = center.x + (dx / distance) * pushDistance;
-                newY = center.y + (dy / distance) * pushDistance;
+            if (distanceToCenter < minDistanceFromBorder) {
+                // Push enemy away from safe zone border to maintain buffer
+                if (distanceToCenter > 0) {
+                    newX = center.x + (dx / distanceToCenter) * minDistanceFromBorder;
+                    newY = center.y + (dy / distanceToCenter) * minDistanceFromBorder;
+                }
             }
         }
         
@@ -161,24 +175,26 @@ class Enemy {
             // Move at half speed when aimless
             const aimlessSpeed = this.speed * 0.5;
             this.velocity.x = (dx / distance) * aimlessSpeed;
-            this.velocity.y = (dy / distance) * aimlessSpeed;
-        }
+            this.velocity.y = (dy / distance) * aimlessSpeed;        }
           // Calculate new position
         let newX = this.x + this.velocity.x * deltaTime;
         let newY = this.y + this.velocity.y * deltaTime;
         
-        // Prevent enemy from entering safe zone ONLY when it's available or active
-        if (arena && arena.isInSafeZone(newX, newY) && arena.getSafeZoneStatus().available) {
-            // Push enemy away from safe zone only when zone is available/active
+        // Prevent enemy from touching safe zone border ONLY when player is in the safe zone
+        if (arena && arena.getSafeZoneStatus().inSafeZone && arena.getSafeZoneStatus().available) {
+            // Check if enemy would be too close to safe zone border
             const center = arena.getCenter();
             const dx = newX - center.x;
             const dy = newY - center.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
+            const minDistanceFromBorder = arena.safeZoneRadius + this.radius + 5;
             
-            if (distance > 0) {
-                const pushDistance = arena.safeZoneRadius + this.radius + 5;
-                newX = center.x + (dx / distance) * pushDistance;
-                newY = center.y + (dy / distance) * pushDistance;
+            if (distanceToCenter < minDistanceFromBorder) {
+                // Push enemy away from safe zone border to maintain buffer
+                if (distanceToCenter > 0) {
+                    newX = center.x + (dx / distanceToCenter) * minDistanceFromBorder;
+                    newY = center.y + (dy / distanceToCenter) * minDistanceFromBorder;
+                }
             }
         }
         
@@ -194,8 +210,7 @@ class Enemy {
             this.y = Math.max(arena.borderThickness + margin, 
                              Math.min(arena.height - arena.borderThickness - margin, this.y));
         }
-    }
-      // Generate a random target for aimless movement
+    }    // Generate a random target for aimless movement
     generateAimlessTarget(arena) {
         if (!arena) return;
         
@@ -207,9 +222,9 @@ class Enemy {
                 y: arena.borderThickness + 50 + Math.random() * (arena.height - 2 * arena.borderThickness - 100)
             };
             attempts++;
-            // Only avoid safe zone if it's available - during cooldown, enemies can enter
+            // Only avoid safe zone if player is in it and zone is available
         } while (arena.isInSafeZone(this.aimlessTarget.x, this.aimlessTarget.y) && 
-                 safeZoneStatus.available && attempts < 10);
+                 safeZoneStatus.inSafeZone && safeZoneStatus.available && attempts < 10);
     }
     
     // Check if we're near a target
@@ -337,12 +352,69 @@ class Enemy {
                     ctx.lineTo(endX, endY);
                     ctx.stroke();
                 }
-                
-                // Add pulsing effect when dashing
+                  // Add pulsing effect when dashing
                 if (this.isDashing) {
                     ctx.fillStyle = 'rgba(255, 170, 0, 0.3)';
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.globalAlpha = 1.0;
+                break;
+            case 'memoryleech':
+                // Draw energy drain effect
+                if (this.isDraining) {
+                    // Draw drain beam effect
+                    ctx.strokeStyle = 'rgba(138, 43, 226, 0.6)';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([5, 5]);
+                    
+                    // Draw pulsing beam to show draining
+                    const pulseIntensity = 0.5 + 0.5 * Math.sin(this.pulseTimer * 8);
+                    ctx.globalAlpha = pulseIntensity;
+                    
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.drainRange, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    ctx.setLineDash([]);
+                }
+                
+                // Draw tentacle-like appendages
+                ctx.strokeStyle = this.isFlashing ? '#ffffff' : '#9932cc';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.7;
+                
+                const tentacleCount = 4;
+                for (let i = 0; i < tentacleCount; i++) {
+                    const angle = (i / tentacleCount) * Math.PI * 2 + this.pulseTimer;
+                    const wave = Math.sin(this.pulseTimer * 3 + i) * 3;
+                    const tentacleLength = 12 + wave;
+                    
+                    const startX = this.x + Math.cos(angle) * this.radius;
+                    const startY = this.y + Math.sin(angle) * this.radius;
+                    
+                    // Create wavy tentacle
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    
+                    for (let j = 1; j <= 3; j++) {
+                        const segmentAngle = angle + Math.sin(this.pulseTimer * 2 + j) * 0.3;
+                        const segmentX = startX + Math.cos(segmentAngle) * (tentacleLength * j / 3);
+                        const segmentY = startY + Math.sin(segmentAngle) * (tentacleLength * j / 3);
+                        ctx.lineTo(segmentX, segmentY);
+                    }
+                    
+                    ctx.stroke();
+                }
+                
+                // Draw pulsing core when draining
+                if (this.isDraining) {
+                    const pulseSize = 3 + 2 * Math.sin(this.pulseTimer * 6);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 
@@ -369,8 +441,31 @@ class Enemy {
                     
                     // Dash lasts for a short time
                     setTimeout(() => {
-                        this.isDashing = false;
-                    }, 400); // 0.4 seconds of dashing
+                        this.isDashing = false;                    }, 400); // 0.4 seconds of dashing
+                }
+                break;
+            case 'memoryleech':
+                // Update pulse timer for visual effect
+                this.pulseTimer += deltaTime;
+                
+                // Calculate distance to player
+                const dx2 = player.x - this.x;
+                const dy2 = player.y - this.y;
+                const distanceToPlayer2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                
+                // Drain player energy if in range
+                if (distanceToPlayer2 <= this.drainRange) {
+                    this.isDraining = true;
+                    // Reduce player's dash cooldown recovery rate
+                    if (player.dashCooldownTimer > 0) {
+                        player.dashCooldownTimer += this.drainRate * deltaTime;
+                    }
+                    // Reduce overclock charge
+                    if (player.overclockCharge > 0) {
+                        player.overclockCharge = Math.max(0, player.overclockCharge - this.drainRate * deltaTime * 10);
+                    }
+                } else {
+                    this.isDraining = false;
                 }
                 break;
         }

@@ -15,7 +15,7 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
-    display: block;
+    display: none; /* Hidden during splash screens */
 }
 
 #gameCanvas {
@@ -25,6 +25,12 @@ body {
     background: #001122;
     border: none;
     box-shadow: none;
+    outline: none; /* Remove default focus outline */
+}
+
+#gameCanvas:focus {
+    outline: 2px solid #00ffff;
+    outline-offset: -2px;
 }
 
 /* HUD Overlay */
@@ -216,7 +222,7 @@ body {
 }
 
 .overclock-fill.ready {
-    background: linear-gradient(to bottom, #ffff00, #cccc00);
+    background: linear-gradient(to bottom, #00ff00, #00cc00);
     animation: readyPulse 0.8s ease-in-out infinite alternate;
 }
 
@@ -237,7 +243,7 @@ body {
 }
 
 .overclock-ready {
-    color: #ffff00;
+    color: #00ff00;
     font-size: 9px;
     margin-top: 4px;
     animation: readyBlink 1s ease-in-out infinite;
@@ -543,12 +549,83 @@ body {
     margin-top: 4px;
 }
 
-@keyframes preparingPulse {
-    0% { opacity: 0.6; }
-    100% { opacity: 1.0; }
+/* Upgrades Panel */
+.upgrades-container {
+    position: absolute;
+    top: 480px;
+    left: 20px;
+    width: 220px;
 }
 
-@keyframes spawnPulse {
+.upgrades-panel {
+    background: rgba(102, 68, 0, 0.3);
+    border: 2px solid #ff6600;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 0 8px rgba(255, 102, 0, 0.3);
+}
+
+.upgrades-title {
+    color: #ff6600;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-shadow: 0 0 5px #ff6600;
+    text-align: center;
+}
+
+.upgrades-list {
+    min-height: 20px;
+}
+
+.upgrades-empty {
+    color: #888888;
+    font-size: 10px;
+    text-align: center;
+    font-style: italic;
+}
+
+.upgrade-item {
+    background: rgba(255, 102, 0, 0.1);
+    border: 1px solid rgba(255, 102, 0, 0.3);
+    border-radius: 3px;
+    padding: 4px 6px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.upgrade-item:last-child {
+    margin-bottom: 0;
+}
+
+.upgrade-item-icon {
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.upgrade-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.upgrade-item-name {
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upgrade-item-level {
+    color: #ff6600;
+    font-size: 9px;
+    margin-top: 1px;
+}
+
+@keyframes statusFlash {
     0% { opacity: 0.8; }
     100% { opacity: 1.0; }
 }
@@ -912,181 +989,179 @@ body {
     }
 }
 
-/* Responsive Design */
-@media (max-width: 900px) {
-    body {
-        padding: 10px;
-    }
-    
-    #gameCanvas {
-        max-width: 100%;
-        max-height: 90vh;
-    }
-      .health-container {
-        width: 250px;
-        bottom: 15px;
-        transform: translateX(-50%) scale(0.85);
-        transform-origin: bottom center;
-    }
-    
-    .overclock-container {
-        width: 160px;
-        top: 85px;
-        transform: scale(0.85);
-        transform-origin: top left;
-    }
-      .dash-container {
-        width: 120px;
-        top: 150px;
-        transform: scale(0.85);
-        transform-origin: top left;
-    }
-      .safezone-container {
-        width: 150px;
-        top: 200px;
-        transform: scale(0.85);
-        transform-origin: top left;
-    }
-    
-    .wave-container {
-        width: 180px;
-        top: 265px;
-        transform: scale(0.85);
-        transform-origin: top left;
-    }
-    
-    .stats-container {
-        width: 160px;
-        transform: scale(0.85);
-        transform-origin: top right;
-    }
-    
-    .minimap-container {
-        width: 100px;
-        height: 100px;
-        transform: scale(0.8);
-        transform-origin: bottom right;
-    }
-    
-    .debug-panel {
-        max-width: 150px;
-        font-size: 10px;
-        transform: scale(0.8);
-        transform-origin: bottom left;
-    }
-}
-
-@media (max-width: 768px) {
-    .settings-panel {
-        width: 95vw;
-        margin: 10px;
-    }
-    
-    .settings-header,
-    .settings-content,
-    .settings-footer {
-        padding: 15px 20px;
-    }
-    
-    .settings-title {
-        font-size: 20px;
-    }
-    
-    .settings-option {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }    /* Settings button mobile adjustments */
-    .settings-button {
-        top: 3px;
-        left: 3px;
-        width: 28px;
-        height: 26px;
-        gap: 1px;
-    }
-    
-    .hamburger-line {
-        width: 14px;
-    }
-      /* Adjust health container for mobile */
-    .health-container {
-        width: 280px;
-        bottom: 15px;
-        transform: translateX(-50%);
-    }
-}
-
-@media (max-width: 600px) {
-    .health-container,
-    .overclock-container,
-    .dash-container,
-    .safezone-container {
-        transform: scale(0.7);
-    }
-    
-    .health-container {
-        transform: translateX(-50%) scale(0.7);
-        transform-origin: bottom center;
-    }
-    
-    .overclock-container {
-        top: 70px;
-    }
-    
-    .dash-container {
-        top: 125px;
-    }
-      .safezone-container {
-        top: 175px;
-    }
-    
-    .wave-container {
-        top: 235px;
-    }
-    
-    .stats-container {
-        transform: scale(0.7);
-    }
-    
-    .minimap-container {
-        width: 80px;
-        height: 80px;
-        transform: scale(0.6);
-    }
-}
-
-/* Debug Panel */
-.debug-panel {
+/* Upgrade Menu Overlay Styles */
+.upgrade-overlay {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid #00ffff;
-    border-radius: 4px;
-    padding: 8px;
-    color: #00ffff;
-    font-size: 12px;
-    font-family: 'Courier New', monospace;
-    max-width: 200px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 40;
+    pointer-events: auto;
+    backdrop-filter: blur(8px);
 }
 
-.debug-panel.hidden {
+.upgrade-overlay.hidden {
     display: none;
 }
 
-/* Changelog Styles */
+.upgrade-panel {
+    background: linear-gradient(135deg, rgba(0, 68, 102, 0.95) 0%, rgba(0, 34, 68, 0.95) 100%);
+    border: 3px solid #ff6600;
+    border-radius: 12px;
+    width: 700px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(255, 102, 0, 0.6);
+    animation: upgradeSlideIn 0.4s ease-out;
+}
+
+.upgrade-header {
+    background: linear-gradient(90deg, #664400 0%, #886600 100%);
+    border-bottom: 2px solid #ff6600;
+    padding: 20px 30px;
+    text-align: center;
+}
+
+.upgrade-title {
+    color: #ff6600;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-shadow: 0 0 15px #ff6600;
+    animation: upgradeGlow 2s ease-in-out infinite alternate;
+}
+
+.upgrade-subtitle {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    opacity: 0.9;
+}
+
+.upgrade-content {
+    padding: 30px;
+}
+
+.upgrade-choices {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.upgrade-choice {
+    flex: 1;
+    min-width: 180px;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(0, 170, 170, 0.1) 100%);
+    border: 2px solid #00ffff;
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.upgrade-choice:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 170, 170, 0.2) 100%);
+    border-color: #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.upgrade-choice:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.upgrade-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    display: block;
+    line-height: 1;
+}
+
+.upgrade-name {
+    color: #00ffff;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+.upgrade-description {
+    color: #ffffff;
+    font-size: 12px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    opacity: 0.9;
+}
+
+.upgrade-level {
+    color: #ffaa00;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 8px;
+    background: rgba(255, 170, 0, 0.2);
+    border: 1px solid #ffaa00;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.upgrade-footer {
+    background: linear-gradient(90deg, #664400 0%, #886600 100%);
+    border-top: 2px solid #ff6600;
+    padding: 15px 30px;
+    text-align: center;
+}
+
+.upgrade-instruction {
+    color: #ff6600;
+    font-size: 14px;
+    font-weight: bold;
+    animation: instructionBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes upgradeSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes upgradeGlow {
+    from {
+        text-shadow: 0 0 15px #ff6600;
+    }
+    to {
+        text-shadow: 0 0 25px #ff6600, 0 0 35px #ff6600;
+    }
+}
+
+/* Changelog Overlay Styles */
 .changelog-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.9);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 30;
+    z-index: 35;
     pointer-events: auto;
+    backdrop-filter: blur(8px);
 }
 
 .changelog-overlay.hidden {
@@ -1094,39 +1169,41 @@ body {
 }
 
 .changelog-panel {
-    background: linear-gradient(135deg, rgba(0, 68, 102, 0.9) 0%, rgba(0, 34, 68, 0.9) 100%);
+    background: linear-gradient(135deg, rgba(0, 68, 102, 0.95) 0%, rgba(0, 34, 68, 0.95) 100%);
     border: 3px solid #00ffff;
-    border-radius: 8px;
+    border-radius: 12px;
     width: 600px;
     max-width: 90vw;
     max-height: 80vh;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
     overflow: hidden;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+    animation: changelogSlideIn 0.3s ease-out;
 }
 
 .changelog-header {
     background: linear-gradient(90deg, #004466 0%, #006688 100%);
     border-bottom: 2px solid #00ffff;
-    padding: 15px 20px;
+    padding: 20px 30px;
     text-align: center;
 }
 
 .changelog-title {
     color: #00ffff;
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
-    margin-bottom: 5px;
-    text-shadow: 0 0 10px #00ffff;
+    margin-bottom: 8px;
+    text-shadow: 0 0 15px #00ffff;
 }
 
 .changelog-version {
     color: #ffffff;
     font-size: 14px;
     font-weight: bold;
+    opacity: 0.9;
 }
 
 .changelog-content {
-    padding: 20px;
+    padding: 20px 30px;
     max-height: 50vh;
     overflow-y: auto;
 }
@@ -1135,28 +1212,33 @@ body {
     margin-bottom: 20px;
 }
 
+.changelog-section:last-child {
+    margin-bottom: 0;
+}
+
 .changelog-section-title {
-    color: #ff6600;
-    font-size: 14px;
+    color: #00ffff;
+    font-size: 16px;
     font-weight: bold;
     margin-bottom: 10px;
-    text-shadow: 0 0 5px #ff6600;
-    border-bottom: 1px solid #ff6600;
+    text-shadow: 0 0 8px #00ffff;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.3);
     padding-bottom: 5px;
 }
 
 .changelog-item {
     color: #ffffff;
-    font-size: 12px;
+    font-size: 14px;
+    line-height: 1.6;
     margin-bottom: 6px;
     padding-left: 10px;
-    line-height: 1.4;
+    opacity: 0.95;
 }
 
 .changelog-footer {
-    background: linear-gradient(90deg, #004466 0%, #006688 100%);
-    border-top: 2px solid #00ffff;
-    padding: 10px 20px;
+    background: rgba(0, 255, 255, 0.05);
+    border-top: 1px solid rgba(0, 255, 255, 0.3);
+    padding: 15px 30px;
     text-align: center;
 }
 
@@ -1167,7 +1249,7 @@ body {
     animation: instructionBlink 1.5s ease-in-out infinite;
 }
 
-/* Changelog scrollbar styling */
+/* Changelog content scrollbar */
 .changelog-content::-webkit-scrollbar {
     width: 8px;
 }
@@ -1178,12 +1260,24 @@ body {
 }
 
 .changelog-content::-webkit-scrollbar-thumb {
-    background: #00ffff;
+    background: rgba(0, 255, 255, 0.6);
     border-radius: 4px;
+    transition: background 0.3s ease;
 }
 
 .changelog-content::-webkit-scrollbar-thumb:hover {
     background: #00cccc;
+}
+
+@keyframes changelogSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 /* Pause Overlay Styles */
@@ -1193,12 +1287,13 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 25;
     pointer-events: auto;
+    backdrop-filter: blur(5px);
 }
 
 .pause-overlay.hidden {
@@ -1206,47 +1301,266 @@ body {
 }
 
 .pause-panel {
-    background: linear-gradient(135deg, rgba(0, 68, 102, 0.9) 0%, rgba(0, 34, 68, 0.9) 100%);
-    border: 3px solid #00ffff;
-    border-radius: 8px;
-    padding: 40px;
+    background: linear-gradient(135deg, rgba(0, 68, 102, 0.95) 0%, rgba(0, 34, 68, 0.95) 100%);
+    border: 3px solid #ffaa00;
+    border-radius: 12px;
+    padding: 40px 60px;
     text-align: center;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-    min-width: 300px;
+    box-shadow: 0 0 40px rgba(255, 170, 0, 0.6);
+    animation: pauseSlideIn 0.3s ease-out;
 }
 
 .pause-title {
-    color: #00ffff;
+    color: #ffaa00;
     font-size: 32px;
     font-weight: bold;
     margin-bottom: 30px;
-    text-shadow: 0 0 15px #00ffff;
-    animation: pausePulse 2s ease-in-out infinite;
+    text-shadow: 0 0 20px #ffaa00;
 }
 
 .pause-instructions {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
 .pause-instruction {
     color: #ffffff;
     font-size: 16px;
     font-weight: bold;
-    padding: 10px 20px;
-    background: rgba(0, 255, 255, 0.1);
-    border: 1px solid #00ffff;
-    border-radius: 4px;
+    padding: 8px 16px;
+    background: rgba(255, 170, 0, 0.1);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+    border-radius: 6px;
     transition: all 0.3s ease;
 }
 
 .pause-instruction:hover {
-    background: rgba(0, 255, 255, 0.2);
-    transform: scale(1.05);
+    background: rgba(255, 170, 0, 0.2);
+    transform: translateY(-2px);
 }
 
-@keyframes pausePulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.02); }
+@keyframes pauseSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Debug Panel Styles */
+.debug-panel {
+    position: absolute;
+    top: 120px;
+    left: 20px;
+    width: 300px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #ffff00;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #ffff00;
+    z-index: 15;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);
+}
+
+.debug-panel.hidden {
+    display: none;
+}
+
+#debugInfo {
+    line-height: 1.4;
+    white-space: pre-wrap;
+}
+
+/* Splash Screen Styles */
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #101216;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    display: none; /* Hidden by default */
+    animation: splashFadeIn 0.5s ease-out;
+}
+
+/* Show splash screen when active */
+.splash-screen.active {
+    display: flex;
+    animation: splashFadeIn 1s ease-out;
+}
+
+.splash-screen.fade-out {
+    animation: splashFadeOut 1s ease-in-out forwards;
+}
+
+.splash-screen.fade-in {
+    display: flex !important;
+    animation: splashFadeIn 1s ease-out forwards;
+}
+
+.splash-content {
+    text-align: center;
+    animation: splashContentSlide 1.5s ease-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.splash-logo {
+    width: 600px;
+    height: auto;
+    max-width: 80vw;
+    max-height: 50vh;
+    margin-bottom: 30px;
+    filter: drop-shadow(0 0 20px rgba(232, 213, 196, 0.3));
+    animation: logoGlow 2s ease-in-out infinite alternate;
+    object-fit: contain;
+}
+
+.splash-subtitle {
+    color: #e8d5c4;
+    font-family: 'Courier New', monospace;
+    font-size: 28px;
+    font-weight: 300;
+    margin-bottom: 20px;
+    letter-spacing: 4px;
+    opacity: 0.9;
+    animation: subtitleFade 2s ease-out 0.5s both;
+    text-shadow: 0 0 10px rgba(232, 213, 196, 0.5);
+}
+
+.splash-loading {
+    margin-top: 20px;
+    animation: loadingFade 2s ease-out 1s both;
+}
+
+.loading-squares {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.loading-square {
+    width: 14px;
+    height: 14px;
+    background: #e8d5c4;
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(232, 213, 196, 0.6);
+    animation: squareBounce 1.4s ease-in-out infinite both;
+}
+
+.loading-square:nth-child(1) { animation-delay: -0.32s; }
+.loading-square:nth-child(2) { animation-delay: -0.16s; }
+.loading-square:nth-child(3) { animation-delay: 0; }
+
+@keyframes splashFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes splashFadeOut {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.05);
+        visibility: hidden;
+    }
+}
+
+@keyframes splashContentSlide {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes logoGlow {
+    from {
+        filter: drop-shadow(0 0 30px rgba(232, 213, 196, 0.4));
+    }
+    to {
+        filter: drop-shadow(0 0 50px rgba(232, 213, 196, 0.8));
+    }
+}
+
+@keyframes subtitleFade {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 0.8;
+        transform: translateY(0);
+    }
+}
+
+@keyframes loadingFade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes squareBounce {
+    0%, 80%, 100% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0.3;
+    }
+    40% {
+        transform: scale(1) rotate(45deg);
+        opacity: 1;
+    }
+}
+
+/* Game Logo Splash Screen Styles */
+.game-logo {
+    width: 700px;
+    max-width: 85vw;
+    max-height: 60vh;
+    filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.4));
+    animation: gameLogoEntrance 2s ease-out;
+}
+
+@keyframes gameLogoEntrance {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) rotateY(-15deg);
+        filter: drop-shadow(0 0 50px rgba(0, 255, 255, 0.8));
+    }
+    50% {
+        transform: scale(1.05) rotateY(0deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotateY(0deg);
+        filter: drop-shadow(0 0 40px rgba(0, 255, 255, 0.6));
+    }
 }

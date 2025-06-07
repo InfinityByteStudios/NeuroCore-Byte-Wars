@@ -135,11 +135,10 @@ class UI {
             // Show remaining overclock time
             fillPercent = player.overclockTimer / player.overclockDuration;
             fillColor = '#ff00ff'; // Bright magenta for active overclock
-            barText = `OVERCLOCK: ${player.overclockTimer.toFixed(1)}s`;
-        } else {
+            barText = `OVERCLOCK: ${player.overclockTimer.toFixed(1)}s`;        } else {
             // Show charge progress
             fillPercent = player.overclockCharge / player.overclockMaxCharge;
-            fillColor = fillPercent >= 1.0 ? '#ffff00' : '#ff6600'; // Yellow when ready, orange while charging
+            fillColor = fillPercent >= 1.0 ? '#00ff00' : '#ff6600'; // Green when ready, orange while charging
             barText = `CHARGE: ${player.overclockCharge}/${player.overclockMaxCharge}`;
         }
         
@@ -165,10 +164,9 @@ class UI {
         ctx.textAlign = 'left';
         const label = player.isOverclocked ? '◤ NEURAL OVERCLOCK ACTIVE ◥' : '◤ NEURAL OVERCLOCK ◥';
         ctx.fillText(label, barX, barY - 10);
-        
-        // Ready indicator
+          // Ready indicator
         if (!player.isOverclocked && player.overclockCharge >= player.overclockMaxCharge) {
-            ctx.fillStyle = '#ffff00';
+            ctx.fillStyle = '#00ff00';
             ctx.font = 'bold 9px Courier New';
             ctx.fillText('⚡ READY - PRESS Q ⚡', barX + barWidth + 15, barY + barHeight/2 + 3);
         }

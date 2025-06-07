@@ -6,10 +6,35 @@
     <title>NeuroCore: Byte Wars</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+<body>    <!-- Studio Splash Screen -->
+    <div id="studioSplash" class="splash-screen active">
+        <div class="splash-content">
+            <img src="assets/InfinityByte Studios 1920×1080.png" alt="InfinityByte Studio" class="splash-logo">
+            <div class="splash-subtitle">Presents</div>
+            <div class="splash-loading">
+                <div class="loading-squares">
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                </div>
+            </div>
+        </div>
+    </div>    <!-- Game Logo Splash Screen -->
+    <div id="gameSplash" class="splash-screen">
+        <div class="splash-content">
+            <img src="assets/NeuroCore Byte Wars Logo.png" alt="NeuroCore Byte Wars" class="splash-logo game-logo">
+            <div class="splash-loading">
+                <div class="loading-squares">
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                    <div class="loading-square"></div>
+                </div>
+            </div>
+        </div>
+    </div><div id="gameContainer">
+        <canvas id="gameCanvas" tabindex="0"></canvas>
           <!-- HUD Overlay -->
-        <div id="hudOverlay">            <!-- Settings Button (Top Left) -->
+        <div id="hudOverlay"><!-- Settings Button (Top Left) -->
             <div class="settings-button" id="settingsButton">
                 <div class="hamburger-line"></div>
                 <div class="hamburger-line"></div>
@@ -86,9 +111,19 @@
                         <div class="wave-progress-text" id="waveProgressText">0/0</div>
                     </div>
                     <div class="wave-timer" id="waveTimer"></div>
+                </div>            </div>
+            
+            <!-- Active Upgrades Panel -->
+            <div class="upgrades-container">
+                <div class="upgrades-panel">
+                    <div class="upgrades-title">◤ NEURAL MODS ◥</div>
+                    <div class="upgrades-list" id="upgradesList">
+                        <div class="upgrades-empty" id="upgradesEmpty">No upgrades active</div>
+                    </div>
                 </div>
             </div>
-              <!-- Mini Map -->
+            
+            <!-- Mini Map -->
             <div class="minimap-container">
                 <div class="minimap-panel">
                     <div class="minimap-title">TACTICAL MAP</div>
@@ -149,7 +184,24 @@
                     </div>
                 </div>
             </div>
-            
+              <!-- Upgrade Menu Overlay -->
+            <div class="upgrade-overlay hidden" id="upgradeOverlay">
+                <div class="upgrade-panel">
+                    <div class="upgrade-header">
+                        <div class="upgrade-title">◤ NEURAL ENHANCEMENT ◥</div>
+                        <div class="upgrade-subtitle">Choose your upgrade to evolve your combat capabilities</div>
+                    </div>
+                    <div class="upgrade-content">
+                        <div class="upgrade-choices" id="upgradeChoices">
+                            <!-- Upgrade options will be dynamically populated -->
+                        </div>
+                    </div>
+                    <div class="upgrade-footer">
+                        <div class="upgrade-instruction">Click an upgrade to select it</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Settings Overlay -->
             <div class="settings-overlay hidden" id="settingsOverlay">
                 <div class="settings-panel">
@@ -208,15 +260,22 @@
             <div class="game-over-stats" id="finalKills">Enemies Eliminated: 0</div>
             <div class="game-over-instruction">Press R to restart neural systems</div>
         </div>
-    </div>      <script src="js/input.js"></script>
+    </div>    <script src="js/input.js"></script>
     <script src="js/bullet.js"></script>
     <script src="js/weapon.js"></script>
     <script src="js/arena.js"></script>
     <script src="js/enemy.js"></script>
     <script src="js/enemyManager.js"></script>
+    <script src="js/upgradeSystem.js"></script>
     <script src="js/visualEffects.js"></script>
     <script src="js/modernUI.js"></script>
     <script src="js/player.js"></script>
-    <script src="js/game.js"></script>
+    <script src="js/game.js"></script>    <script>
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            console.log('Page loaded, initializing game...');
+            window.game = new Game(); // Make game accessible globally for testing
+        });
+    </script>
 </body>
 </html>

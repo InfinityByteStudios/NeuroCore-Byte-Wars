@@ -9,9 +9,7 @@ class InputManager {
         };
         
         this.setupEventListeners();
-    }
-    
-    setupEventListeners() {
+    }    setupEventListeners() {
         // Keyboard events
         document.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
@@ -52,12 +50,10 @@ class InputManager {
         }
         return false;
     }
-    
-    getMovementVector() {
+      getMovementVector() {
         let x = 0;
         let y = 0;
-        
-        if (this.isKeyPressed('KeyW') || this.isKeyPressed('ArrowUp')) y -= 1;
+          if (this.isKeyPressed('KeyW') || this.isKeyPressed('ArrowUp')) y -= 1;
         if (this.isKeyPressed('KeyS') || this.isKeyPressed('ArrowDown')) y += 1;
         if (this.isKeyPressed('KeyA') || this.isKeyPressed('ArrowLeft')) x -= 1;
         if (this.isKeyPressed('KeyD') || this.isKeyPressed('ArrowRight')) x += 1;

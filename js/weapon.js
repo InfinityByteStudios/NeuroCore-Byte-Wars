@@ -8,13 +8,15 @@ class Weapon {    constructor() {        this.fireRate = 5; // bullets per secon
         this.baseFireRate = this.fireRate;
         this.baseDamage = this.damage;
         this.isOverclocked = false;
+        
+        // Upgrade system
+        this.piercing = 0; // Number of enemies bullets can pierce through
     }
     
     canShoot(currentTime) {
         const timeSinceLastShot = currentTime - this.lastShotTime;
         return timeSinceLastShot >= (1000 / this.fireRate); // convert to milliseconds
-    }
-      shoot(x, y, direction, currentTime) {
+    }    shoot(x, y, direction, currentTime) {
         if (!this.canShoot(currentTime)) {
             return null;
         }
@@ -28,6 +30,7 @@ class Weapon {    constructor() {        this.fireRate = 5; // bullets per secon
         
         const bullet = new Bullet(bulletX, bulletY, direction, this.bulletSpeed);
         bullet.damage = this.damage; // Set bullet damage from weapon
+        bullet.piercing = this.piercing; // Set bullet piercing from weapon
         return bullet;
     }
     

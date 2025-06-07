@@ -22,7 +22,8 @@ class Player {
         this.invulnerable = false;
         this.invulnerabilityTimer = 0;
         this.invulnerabilityDuration = 1.0; // seconds
-          // Visual effects
+        
+        // Visual effects
         this.flashTimer = 0;
         this.isFlashing = false;
         this.damageColor = '#ff0000';          // Dash system
@@ -35,10 +36,15 @@ class Player {
         this.dashDirection = { x: 0, y: 0 };
         this.dashTrail = []; // For visual trail effect
         
+        // Base properties for upgrade calculations
+        this.baseDashCooldown = this.dashCooldown;
+        this.baseDashSpeed = this.dashSpeed;
+        this.baseOverclockChargePerKill = 20; // Base charge gained per kill
+        
         // Overclock system
         this.overclockCharge = 0; // Current charge (0-100)
         this.overclockMaxCharge = 100; // Max charge needed
-        this.overclockChargePerKill = 20; // Charge gained per kill
+        this.overclockChargePerKill = this.baseOverclockChargePerKill; // Charge gained per kill
         this.overclockDuration = 8.0; // seconds when active
         this.overclockTimer = 0; // remaining overclock time
         this.isOverclocked = false;
@@ -70,8 +76,7 @@ class Player {
         }
         
         // Update dash state
-        this.updateDash(deltaTime);
-          // Get movement input (disabled during dash)
+        this.updateDash(deltaTime);        // Get movement input (disabled during dash)
         if (!this.isDashing) {
             const movement = input.getMovementVector();
             
@@ -279,6 +284,72 @@ class Player {
     onKill() {
         // Called when player kills an enemy
         this.addOverclockCharge(this.overclockChargePerKill);
+    }
+    
+    // Apply upgrade effects to player stats
+    applyUpgradeEffects(effects) {
+        // Apply damage multiplier to weapon
+        if (effects.damageMultiplier !== undefined) {
+            this.weapon.baseDamage = Math.round(this.weapon.baseDamage * effects.damageMultiplier);
+            // Also update current damage if not overclocked
+            if (!this.weapon.isOverclocked) {
+                this.weapon.damage = this.weapon.baseDamage;
+            }
+        }
+        
+        // Apply fire rate multiplier to weapon
+        if (effects.fireRateMultiplier !== undefined) {
+            this.weapon.baseFireRate = this.weapon.baseFireRate * effects.fireRateMultiplier;
+            // Also update current fire rate if not overclocked
+            if (!this.weapon.isOverclocked) {
+                this.weapon.fireRate = this.weapon.baseFireRate;
+            }
+        }
+        
+        // Apply overclock charge multiplier
+        if (effects.overclockChargeMultiplier !== undefined) {
+            this.overclockChargePerKill = Math.round(this.baseOverclockChargePerKill * effects.overclockChargeMultiplier);
+        }
+        
+        // Apply dash cooldown multiplier
+        if (effects.dashCooldownMultiplier !== undefined) {
+            this.dashCooldown = this.baseDashCooldown * effects.dashCooldownMultiplier;
+        }
+        
+        // Apply dash distance multiplier (affects dash speed)
+        if (effects.dashDistanceMultiplier !== undefined) {
+            this.dashSpeed = this.baseDashSpeed * effects.dashDistanceMultiplier;
+        }
+        
+        // Apply bullet piercing to weapon
+        if (effects.bulletPiercing !== undefined && effects.bulletPiercing > 0) {
+            this.weapon.piercing = effects.bulletPiercing;
+        }
+        
+        console.log(`🔧 Player stats updated:`, {
+            damage: this.weapon.damage,
+            fireRate: this.weapon.fireRate,
+            dashCooldown: this.dashCooldown,
+            overclockChargePerKill: this.overclockChargePerKill,
+            piercing: this.weapon.piercing || 0
+        });
+    }
+    
+    // Reset all player stats to base values
+    resetUpgradeEffects() {
+        // Reset weapon stats
+        this.weapon.damage = this.weapon.baseDamage;
+        this.weapon.fireRate = this.weapon.baseFireRate;
+        this.weapon.piercing = 0;
+        
+        // Reset dash stats
+        this.dashCooldown = this.baseDashCooldown;
+        this.dashSpeed = this.baseDashSpeed;
+        
+        // Reset overclock stats
+        this.overclockChargePerKill = this.baseOverclockChargePerKill;
+        
+        console.log('🔄 Player stats reset to base values');
     }
     
     shoot() {
