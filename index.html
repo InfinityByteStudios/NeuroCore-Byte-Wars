@@ -42,36 +42,21 @@
                 <div class="hamburger-line"></div>
                 <div class="hamburger-line"></div>
             </div>
-            
-            <!-- Health Bar -->
+              <!-- Health Bar -->
             <div class="health-container">
                 <div class="health-panel">
                     <div class="health-label">◤ NEURAL INTEGRITY ◥</div>
                     <div class="health-bar">
                         <div class="health-fill" id="healthFill"></div>
                         <div class="health-text" id="healthText">100/100</div>
-                    </div>
-                    <div class="health-warning" id="healthWarning" style="display: none;">⚠ CRITICAL DAMAGE ⚠</div>
+                    </div>                    <div class="health-warning" id="healthWarning" style="display: none;">⚠ CRITICAL DAMAGE ⚠</div>
                     <div class="shield-indicator" id="shieldIndicator" style="display: none;">◦ SHIELD ACTIVE ◦</div>
                 </div>
-            </div>            <!-- Overclock Bar -->
-            <div class="overclock-container">
-                <div class="overclock-panel" id="overclockPanel">
-                    <div class="overclock-label" id="overclockLabel">◤ NEURAL OVERCLOCK ◥</div>
-                    <div class="overclock-text" id="overclockText">CHARGE: 0/100</div>
-                    <div class="overclock-bar" id="overclockBar" style="display: none;">
-                        <div class="overclock-background"></div>
-                        <div class="overclock-fill-container">
-                            <div class="overclock-fill" id="overclockFill" style="display: none !important;"></div>
-                        </div>
-                    </div>
-                    <div class="overclock-ready" id="overclockReady" style="display: none;">⚡ READY - PRESS Q ⚡</div>
-                    <div class="overclock-effects" id="overclockEffects" style="display: none;">
-                        <span>🔥 FIRE RATE: 2.5x</span>
-                        <span>⚡ SPEED: 1.8x</span>
-                    </div>
-                </div>
             </div>
+            
+            <!-- OVERCLOCK BAR COMPLETELY REMOVED TO ELIMINATE GREEN BAR ISSUE -->
+            <!-- The overclock system still works, but no visual bar is displayed -->
+              
               <!-- Dash Indicator -->
             <div class="dash-container">
                 <div class="dash-panel">
@@ -252,9 +237,15 @@
                         <div class="settings-instruction">Click outside or press ESC to close</div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div>        </div>
         
+        <!-- Feedback Link at bottom of game -->
+        <div class="feedback-container">
+            <a href="https://forms.office.com/r/swdfiQLkCb" target="_blank" class="feedback-link">
+                Send Feedback
+            </a>
+        </div>
+
         <!-- Game Over Screen -->
         <div class="game-over-overlay" id="gameOverScreen" style="display: none;">
             <div class="game-over-title">SYSTEM FAILURE</div>

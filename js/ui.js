@@ -17,14 +17,15 @@ class UI {
         // Animation properties
         this.scoreFlashTimer = 0;
         this.killFlashTimer = 0;
-    }      render(ctx, gameData) {
-        this.updateFlashTimers(gameData);
-        this.drawHealthBar(ctx, gameData.player);
-        // this.drawOverclockBar(ctx, gameData.player); // Disabled - using HTML UI instead
-        this.drawDashIndicator(ctx, gameData.player);
-        this.drawStatsPanel(ctx, gameData.score, gameData.kills);
-        this.drawGameInfo(ctx, gameData);
-        this.drawMiniMap(ctx, gameData);
+    }    render(ctx, gameData) {
+        // Legacy canvas UI completely disabled - using ModernUI HTML system instead
+        // All canvas-based UI rendering has been moved to the HTML/CSS system
+        // This prevents any green bars or other legacy UI elements from appearing
+        
+        // Only render game over screen if needed (ModernUI handles this too)
+        if (gameData.gameOver) {
+            this.drawGameOverScreen(ctx, gameData.score, gameData.kills);
+        }
     }
     
     updateFlashTimers(gameData) {
@@ -102,83 +103,8 @@ class UI {
             ctx.fillText('◦ SHIELD ACTIVE ◦', barX + barWidth + 15, barY + 15);
         }
     }
-    
-    drawOverclockBar(ctx, player) {
-        const barWidth = 200;
-        const barHeight = 20;
-        const barX = 20;
-        const barY = 50; // Position between health and dash
-        
-        // Overclock panel background with glow
-        ctx.fillStyle = this.panelColor;
-        ctx.fillRect(barX - 6, barY - 6, barWidth + 12, barHeight + 20);
-        
-        // Overclock bar border with special glow
-        const borderColor = player.isOverclocked ? '#ff00ff' : '#ff6600';
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = player.isOverclocked ? 3 : 2;
-        ctx.shadowColor = borderColor;
-        ctx.shadowBlur = player.isOverclocked ? 12 : 6;
-        ctx.strokeRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
-        ctx.shadowBlur = 0;
-        
-        // Overclock bar background
-        ctx.fillStyle = '#111111';
-        ctx.fillRect(barX, barY, barWidth, barHeight);
-        
-        // Overclock charge/timer bar
-        let fillPercent, fillColor, barText;
-        
-        if (player.isOverclocked) {
-            // Show remaining overclock time
-            fillPercent = player.overclockTimer / player.overclockDuration;
-            fillColor = '#ff00ff'; // Bright magenta for active overclock
-            barText = `OVERCLOCK: ${player.overclockTimer.toFixed(1)}s`;        } else {
-            // Show charge progress
-            fillPercent = player.overclockCharge / player.overclockMaxCharge;
-            fillColor = fillPercent >= 1.0 ? '#00ff00' : '#ff6600'; // Green when ready, orange while charging
-            barText = `CHARGE: ${player.overclockCharge}/${player.overclockMaxCharge}`;
-        }
-        
-        const fillWidth = barWidth * fillPercent;
-        
-        // Create gradient for overclock bar
-        const gradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight);
-        gradient.addColorStop(0, fillColor);
-        gradient.addColorStop(1, this.darkenColor(fillColor, 0.4));
-        
-        ctx.fillStyle = gradient;
-        ctx.fillRect(barX, barY, fillWidth, barHeight);
-        
-        // Overclock text
-        ctx.fillStyle = this.secondaryColor;
-        ctx.font = 'bold 11px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText(barText, barX + barWidth/2, barY + barHeight/2 + 4);
-        
-        // Overclock label
-        ctx.fillStyle = player.isOverclocked ? '#ff00ff' : '#ff6600';
-        ctx.font = 'bold 10px Courier New';
-        ctx.textAlign = 'left';
-        const label = player.isOverclocked ? '◤ NEURAL OVERCLOCK ACTIVE ◥' : '◤ NEURAL OVERCLOCK ◥';
-        ctx.fillText(label, barX, barY - 10);
-          // Ready indicator
-        if (!player.isOverclocked && player.overclockCharge >= player.overclockMaxCharge) {
-            ctx.fillStyle = '#00ff00';
-            ctx.font = 'bold 9px Courier New';
-            ctx.fillText('⚡ READY - PRESS Q ⚡', barX + barWidth + 15, barY + barHeight/2 + 3);
-        }
-        
-        // Active status effects
-        if (player.isOverclocked) {
-            ctx.fillStyle = '#ff00ff';
-            ctx.font = 'bold 8px Courier New';
-            ctx.textAlign = 'left';
-            const statusY = barY + barHeight + 12;
-            ctx.fillText(`🔥 FIRE RATE: ${player.overclockMultipliers.fireRate}x`, barX, statusY);
-            ctx.fillText(`⚡ SPEED: ${player.overclockMultipliers.speed}x`, barX + 90, statusY);
-        }
-    }
+      // drawOverclockBar method completely removed - using ModernUI HTML system instead
+    // This prevents any potential green bar rendering from legacy canvas UI
     
     drawDashIndicator(ctx, player) {
         const indicatorX = 20;
@@ -220,10 +146,9 @@ class UI {
             ctx.fillStyle = this.secondaryColor;
             ctx.font = '10px Courier New';
             ctx.textAlign = 'center';
-            ctx.fillText(`DASH: ${player.dashCooldownTimer.toFixed(1)}s`, indicatorX + indicatorWidth/2, indicatorY + indicatorHeight/2 + 3);
-        } else {
-            // Dash ready
-            ctx.fillStyle = this.healthColor;
+            ctx.fillText(`DASH: ${player.dashCooldownTimer.toFixed(1)}s`, indicatorX + indicatorWidth/2, indicatorY + indicatorHeight/2 + 3);        } else {
+            // Dash ready - using accent color instead of green health color
+            ctx.fillStyle = this.accentColor;
             ctx.fillRect(indicatorX, indicatorY, indicatorWidth, indicatorHeight);
             
             ctx.fillStyle = '#000000';

@@ -6,16 +6,13 @@ class ModernUI {    constructor() {
             healthFill: document.getElementById('healthFill'),
             healthText: document.getElementById('healthText'),
             healthWarning: document.getElementById('healthWarning'),
-            shieldIndicator: document.getElementById('shieldIndicator'),
-            
-            // Overclock system - DISABLED VISUALS
-            overclockPanel: document.getElementById('overclockPanel'),
-            overclockLabel: document.getElementById('overclockLabel'),
-            overclockBar: document.getElementById('overclockBar'),
-            overclockFill: document.getElementById('overclockFill'),
-            overclockText: document.getElementById('overclockText'),
-            overclockReady: document.getElementById('overclockReady'),
-            overclockEffects: document.getElementById('overclockEffects'),
+            shieldIndicator: document.getElementById('shieldIndicator'),            // Overclock system - COMPLETELY DISABLED (elements removed from HTML)
+            overclockPanel: null, // document.getElementById('overclockPanel'), 
+            overclockLabel: null, // document.getElementById('overclockLabel'),
+            overclockText: null, // document.getElementById('overclockText'),
+            overclockReady: null, // document.getElementById('overclockReady'),
+            overclockEffects: null, // document.getElementById('overclockEffects'),
+            // Note: All overclock elements completely removed from HTML to eliminate green bar
               // Dash system
             dashFill: document.getElementById('dashFill'),
             dashText: document.getElementById('dashText'),
@@ -152,47 +149,11 @@ class ModernUI {    constructor() {
         } else {
             this.elements.shieldIndicator.style.display = 'none';
         }
-    }      updateOverclock(player) {
-        const panel = this.elements.overclockPanel;
-        const label = this.elements.overclockLabel;
-        const bar = this.elements.overclockBar;
-        const fill = this.elements.overclockFill;
-        const text = this.elements.overclockText;
-        const ready = this.elements.overclockReady;
-        const effects = this.elements.overclockEffects;
-        
-        // Hide the visual fill bar but keep functionality
-        if (fill) {
-            fill.style.display = 'none';
-        }
-        
-        if (player.isOverclocked) {
-            // Active overclock state
-            panel.classList.add('active');
-            label.classList.add('active');
-            
-            text.textContent = `OVERCLOCK: ${player.overclockTimer.toFixed(1)}s`;
-            label.textContent = '◤ NEURAL OVERCLOCK ACTIVE ◥';
-            
-            ready.style.display = 'none';
-            effects.style.display = 'flex';
-            
-        } else {
-            // Charging state
-            panel.classList.remove('active');
-            label.classList.remove('active');
-            
-            text.textContent = `CHARGE: ${player.overclockCharge}/${player.overclockMaxCharge}`;
-            label.textContent = '◤ NEURAL OVERCLOCK ◥';
-            
-            effects.style.display = 'none';
-            
-            if (player.overclockCharge >= player.overclockMaxCharge) {
-                ready.style.display = 'block';
-            } else {
-                ready.style.display = 'none';
-            }
-        }
+    }    updateOverclock(player) {
+        // Overclock UI completely disabled - no visual elements exist
+        // The overclock system still functions in the background
+        // Players can still use Q to activate overclock when charged
+        return;
     }
       updateDash(player) {
         const fill = this.elements.dashFill;
