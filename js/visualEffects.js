@@ -230,7 +230,7 @@ class VisualEffects {
         } else if (damage > 25) {
             sparkColor = '#ff6600'; // Orange for medium damage
             damageColor = '#ff6600';
-        }          // Enemy type specific colors
+        }        // Enemy type specific colors
         if (enemyType === 'bitbug') {
             sparkColor = '#ff6600';
             damageColor = '#ff6600';
@@ -240,6 +240,9 @@ class VisualEffects {
         } else if (enemyType === 'memoryleech') {
             sparkColor = '#8a2be2';
             damageColor = '#8a2be2';
+        } else if (enemyType === 'syntaxbreaker') {
+            sparkColor = '#00ff88';
+            damageColor = '#00ff88';
         }
         
         this.createHitSpark(x, y, sparkColor, sparkSize);
@@ -255,9 +258,7 @@ class VisualEffects {
         this.createDamageNumber(x, y - 15, damage, '#ff0000');
         
         // Reduced screen shake for player damage
-        this.addScreenShake(6, 0.15);    }
-
-    onEnemyDestroyed(x, y, enemyType) {
+        this.addScreenShake(6, 0.15);    }    onEnemyDestroyed(x, y, enemyType) {
         // Explosion-like effect when enemy is destroyed
         let color = '#ffffff';
           if (enemyType === 'bitbug') {
@@ -266,6 +267,8 @@ class VisualEffects {
             color = '#ff4444';
         } else if (enemyType === 'memoryleech') {
             color = '#8a2be2';
+        } else if (enemyType === 'syntaxbreaker') {
+            color = '#00ff88';
         }
         
         // Create multiple spark bursts
@@ -293,14 +296,15 @@ class VisualEffects {
         // Subtle spawn effect
         let color = '#ffffff';
         if (enemyType === 'bitbug') {
-            color = '#ff6600';
-        } else if (enemyType === 'datawisp') {
-            color = '#ff4444';
-        } else if (enemyType === 'memoryleech') {
+            color = '#ff6600';        } else if (enemyType === 'datawisp') {
+            color = '#ff4444';        } else if (enemyType === 'memoryleech') {
             color = '#8a2be2';
+        } else if (enemyType === 'syntaxbreaker') {
+            color = '#00ff88';
         }
         
-        this.createHitSpark(x, y, color, 'small');}
+        this.createHitSpark(x, y, color, 'small');
+    }
 
     onOverclockActivated(x, y) {
         // Special effect when player activates overclock (reduced shake)

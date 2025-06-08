@@ -53,9 +53,21 @@
                     <div class="shield-indicator" id="shieldIndicator" style="display: none;">◦ SHIELD ACTIVE ◦</div>
                 </div>
             </div>
-            
-            <!-- OVERCLOCK BAR COMPLETELY REMOVED TO ELIMINATE GREEN BAR ISSUE -->
+              <!-- OVERCLOCK BAR COMPLETELY REMOVED TO ELIMINATE GREEN BAR ISSUE -->
             <!-- The overclock system still works, but no visual bar is displayed -->
+            
+            <!-- Neural Overclock System -->
+            <div class="overclock-container">
+                <div class="overclock-panel" id="overclockPanel">
+                    <div class="overclock-label" id="overclockLabel">◤ NEURAL OVERCLOCK ◥</div>
+                    <div class="overclock-bar">
+                        <div class="overclock-fill" id="overclockFill"></div>
+                        <div class="overclock-text" id="overclockText">CHARGE: 0/100</div>
+                    </div>
+                    <div class="overclock-ready" id="overclockReady" style="display: none;">◦ OVERCLOCK READY ◦</div>
+                    <div class="overclock-effects" id="overclockEffects" style="display: none;">◦ NEURAL BOOST ACTIVE ◦</div>
+                </div>
+            </div>
               
               <!-- Dash Indicator -->
             <div class="dash-container">
@@ -110,18 +122,14 @@
                 </div>
             </div>
             
-            <!-- Mini Map -->
-            <div class="minimap-container">
+            <!-- Mini Map -->            <div class="minimap-container">
                 <div class="minimap-panel">
                     <div class="minimap-title">TACTICAL MAP</div>
                     <canvas id="minimapCanvas" width="136" height="136"></canvas>
                 </div>
             </div>
             
-            <!-- Debug Panel -->
-            <div class="debug-panel hidden" id="debugPanel">
-                <div id="debugInfo"></div>
-            </div>
+
             
             <!-- Changelog Panel -->
             <div class="changelog-overlay hidden" id="changelogOverlay">
@@ -130,16 +138,18 @@
                         <div class="changelog-title">◤ NEUROCORE CHANGELOG ◥</div>
                         <div class="changelog-version">v1.2.0 - Neural System Updates</div>
                     </div>
-                    <div class="changelog-content">
-                        <div class="changelog-section">
+                    <div class="changelog-content">                        <div class="changelog-section">
                             <div class="changelog-section-title">◦ MAJOR UPDATES ◦</div>
+                            <div class="changelog-item">• Professional intro animation with studio splash screen</div>
+                            <div class="changelog-item">• Enhanced settings button visibility with pulsing animation</div>
                             <div class="changelog-item">• Enhanced Neural Overclock system with visual effects</div>
-                            <div class="changelog-item">• Improved safe zone mechanics with timer system</div>
-                            <div class="changelog-item">• Added wave-based enemy spawning system</div>
+                            <div class="changelog-item">• Improved safe zone mechanics with timer system</div>                            <div class="changelog-item">• Added wave-based enemy spawning system</div>
                             <div class="changelog-item">• New BitBug enemy with dash attacks</div>
-                        </div>
-                        <div class="changelog-section">
+                            <div class="changelog-item">• New Syntax Breaker enemy with control disruption</div>
+                        </div><div class="changelog-section">
                             <div class="changelog-section-title">◦ IMPROVEMENTS ◦</div>
+                            <div class="changelog-item">• Smooth studio logo to game logo transition sequence</div>
+                            <div class="changelog-item">• Fixed UI panel overlapping issues</div>
                             <div class="changelog-item">• Modern UI overlay system</div>
                             <div class="changelog-item">• Tactical minimap with real-time tracking</div>
                             <div class="changelog-item">• Enhanced visual effects system</div>
@@ -152,7 +162,7 @@
                             <div class="changelog-item">• SPACE - Neural Dash</div>
                             <div class="changelog-item">• Q - Activate Overclock</div>
                             <div class="changelog-item">• C - Toggle Changelog</div>
-                            <div class="changelog-item">• D - Debug Info</div>
+
                         </div>
                     </div>
                     <div class="changelog-footer">
@@ -167,7 +177,7 @@
                     <div class="pause-instructions">
                         <div class="pause-instruction">Press P to Resume</div>
                         <div class="pause-instruction">Press C for Changelog</div>
-                        <div class="pause-instruction">Press D for Debug Info</div>
+
                     </div>
                 </div>
             </div>
@@ -199,10 +209,6 @@
                     <div class="settings-content">
                         <div class="settings-section">
                             <div class="settings-section-title">DISPLAY</div>
-                            <div class="settings-option">
-                                <label for="debugToggle">Debug Information</label>
-                                <input type="checkbox" id="debugToggle" class="settings-checkbox">
-                            </div>
                             <div class="settings-option">
                                 <label for="minimapToggle">Mini-map</label>
                                 <input type="checkbox" id="minimapToggle" class="settings-checkbox" checked>

@@ -54,6 +54,12 @@ class Player {
             damage: 2.0, // 2x damage
             dashCooldown: 0.5 // 50% dash cooldown reduction
         };
+        
+        // Glitch effect system (for Syntax Breaker enemy)
+        this.isGlitched = false;
+        this.glitchTimer = 0;
+        this.glitchIntensity = 0.5; // How much controls are scrambled (0-1)
+        this.glitchVisualTimer = 0;
     }    update(deltaTime, input, arena) {
         // Track action events for visual effects
         const actionEvents = {
@@ -78,7 +84,8 @@ class Player {
         // Update dash state
         this.updateDash(deltaTime);        // Get movement input (disabled during dash)
         if (!this.isDashing) {
-            const movement = input.getMovementVector();
+            const originalMovement = input.getMovementVector();
+            const movement = this.getGlitchedMovement(originalMovement);
             
             // Apply movement with acceleration
             const acceleration = 800; // pixels per second squared
@@ -136,13 +143,16 @@ class Player {
             if (this.invulnerabilityTimer <= 0) {
                 this.invulnerable = false;
             }
-        }
-          // Update flash timer
+        }          // Update flash timer
         if (this.isFlashing) {
             this.flashTimer -= deltaTime;
             if (this.flashTimer <= 0) {
                 this.isFlashing = false;
-            }        }
+            }
+        }
+        
+        // Update glitch effect
+        this.updateGlitchEffect(deltaTime);
         
         return actionEvents; // Return action events for visual effects
     }
@@ -396,7 +406,64 @@ class Player {
     
     isDead() {
         return this.health <= 0;
-    }    render(ctx) {
+    }
+
+    // Glitch effect system (for Syntax Breaker enemy)
+    updateGlitchEffect(deltaTime) {
+        if (this.isGlitched) {
+            this.glitchTimer -= deltaTime;
+            this.glitchVisualTimer += deltaTime;
+            
+            if (this.glitchTimer <= 0) {
+                this.isGlitched = false;
+                this.glitchTimer = 0;
+                this.glitchVisualTimer = 0;
+                console.log('Player glitch effect ended');
+            }
+        }
+    }
+
+    applyGlitchEffect(duration = 1.0, intensity = 0.5) {
+        this.isGlitched = true;
+        this.glitchTimer = duration;
+        this.glitchIntensity = intensity;
+        this.glitchVisualTimer = 0;
+        console.log(`Player glitched! Duration: ${duration}s, Intensity: ${intensity}`);
+    }
+
+    // Modify movement input when glitched
+    getGlitchedMovement(originalMovement) {
+        if (!this.isGlitched) return originalMovement;
+
+        // Apply control scrambling based on glitch intensity
+        const scrambleChance = this.glitchIntensity;
+        const time = this.glitchVisualTimer;
+        
+        // Random control inversions and scrambling
+        let x = originalMovement.x;
+        let y = originalMovement.y;
+
+        // Periodic control scrambling
+        if (Math.sin(time * 8) > (1 - scrambleChance)) {
+            // Invert controls randomly
+            if (Math.random() < 0.5) x = -x;
+            if (Math.random() < 0.5) y = -y;
+        }
+
+        // Random direction swapping
+        if (Math.sin(time * 12) > (1 - scrambleChance * 0.8)) {
+            [x, y] = [y, x]; // Swap X and Y
+        }
+
+        // Add jitter
+        const jitterAmount = scrambleChance * 0.3;
+        x += (Math.random() - 0.5) * jitterAmount;
+        y += (Math.random() - 0.5) * jitterAmount;
+
+        return { x, y };
+    }
+
+    render(ctx) {
         // Draw dash trail first (behind player)
         this.renderDashTrail(ctx);
         
@@ -429,7 +496,13 @@ class Player {
             const pulseRate = 3; // pulses per second
             const pulseTime = Date.now() / 1000;
             const pulseFactor = 0.5 + 0.5 * Math.sin(pulseTime * Math.PI * 2 * pulseRate);
-            glowIntensity = 15 + 15 * pulseFactor;
+            glowIntensity = 15 + 15 * pulseFactor;        } else if (this.isGlitched) {
+            // Glitch effect color with erratic flickering
+            const glitchColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const glitchIndex = Math.floor(this.glitchVisualTimer * 20) % glitchColors.length;
+            currentColor = glitchColors[glitchIndex];
+            glowColor = currentColor;
+            glowIntensity = 15 + Math.random() * 10;
         } else if (this.isDashing) {
             // Special dash color with glow
             currentColor = '#ffffff';
@@ -442,12 +515,18 @@ class Player {
             ctx.shadowColor = glowColor;
             ctx.shadowBlur = glowIntensity;
         }
-        
-        // Draw player body
+          // Draw player body
         ctx.fillStyle = currentColor;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();        // Reset shadow
+        ctx.fill();
+        
+        // Draw glitch effects
+        if (this.isGlitched) {
+            this.renderGlitchEffects(ctx);
+        }
+        
+        // Reset shadow
         ctx.shadowBlur = 0;
         
         // Draw aim indicator (enhanced during Overclock)
@@ -549,5 +628,63 @@ class Player {
         }
         
         ctx.globalAlpha = 1.0; // Reset alpha
+    }
+    
+    renderGlitchEffects(ctx) {
+        // Draw scrambled lines and data corruption effects
+        const time = this.glitchVisualTimer;
+        const intensity = this.glitchIntensity;
+        
+        // Random glitch lines
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i < 8; i++) {
+            if (Math.random() < intensity) {
+                const angle = Math.random() * Math.PI * 2;
+                const length = 10 + Math.random() * 15;
+                const startX = this.x + (Math.random() - 0.5) * this.radius * 2;
+                const startY = this.y + (Math.random() - 0.5) * this.radius * 2;
+                const endX = startX + Math.cos(angle) * length;
+                const endY = startY + Math.sin(angle) * length;
+                
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        }
+        
+        // Digital corruption squares
+        ctx.fillStyle = '#ff0000';
+        for (let i = 0; i < 6; i++) {
+            if (Math.random() < intensity * 0.7) {
+                const size = 2 + Math.random() * 4;
+                const offsetX = (Math.random() - 0.5) * this.radius * 2.5;
+                const offsetY = (Math.random() - 0.5) * this.radius * 2.5;
+                
+                ctx.fillRect(this.x + offsetX, this.y + offsetY, size, size);
+            }
+        }
+        
+        // Distortion effect around player
+        const distortionRadius = this.radius + 5;
+        const segments = 16;
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i < segments; i++) {
+            if (Math.random() < intensity * 0.5) {
+                const angle = (i / segments) * Math.PI * 2;
+                const jitter = (Math.random() - 0.5) * 8;
+                const radius = distortionRadius + jitter;
+                const x = this.x + Math.cos(angle) * radius;
+                const y = this.y + Math.sin(angle) * radius;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 1, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
     }
 }

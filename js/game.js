@@ -16,7 +16,7 @@ class Game {
         this.score = 0;
         this.kills = 0;
         this.gameOver = false;
-        this.paused = true; // Start paused during splash screenthis.showDebug = false; // Toggle with D key
+        this.paused = true; // Start paused during splash screen
           // Game timing
         this.lastTime = 0;
         this.running = true;
@@ -192,7 +192,7 @@ class Game {
             upgradeSystem: this.upgradeSystem,
             gameOver: this.gameOver,
             paused: this.paused,
-            showDebug: this.showDebug,
+
             arena: this.arena,
             enemies: this.enemyManager.enemies
         };
@@ -289,16 +289,7 @@ class Game {
         if (!this.gameStarted) {
             return;
         }
-        
-        // Toggle debug display
-        if (this.input.wasKeyPressed('KeyD')) {
-            this.showDebug = !this.showDebug;
-            this.ui.toggleDebug(this.showDebug);
-            // Update settings checkbox if settings are open
-            if (this.ui.settingsVisible) {
-                this.ui.elements.debugToggle.checked = this.showDebug;
-            }
-        }
+  
         
         // Close settings with ESC key
         if (this.input.wasKeyPressed('Escape')) {
@@ -413,19 +404,7 @@ class Game {
                 this.ctx.beginPath();
                 this.ctx.arc(corner.x, corner.y, 15, 0, Math.PI * 2);
                 this.ctx.fill();
-            }
-        });
-    }
-    
-    drawDebugInfo() {
-        this.ctx.fillStyle = '#00ffff';
-        this.ctx.font = '12px Courier New';
-        this.ctx.fillText(`Player: (${Math.round(this.player.x)}, ${Math.round(this.player.y)})`, 10, this.canvas.height - 90);
-        this.ctx.fillText(`Aim: ${Math.round(this.player.aimDirection * 180 / Math.PI)}°`, 10, this.canvas.height - 75);
-        this.ctx.fillText(`Velocity: (${Math.round(this.player.velocity.x)}, ${Math.round(this.player.velocity.y)})`, 10, this.canvas.height - 60);
-        this.ctx.fillText(`Bullets: ${this.player.bullets.length}`, 10, this.canvas.height - 45);
-        this.ctx.fillText(`Enemies: ${this.enemyManager.getActiveEnemyCount()}`, 10, this.canvas.height - 30);
-        this.ctx.fillText(`Score: ${this.score} | Kills: ${this.kills}`, 10, this.canvas.height - 15);
+            }        });
     }
     
     setupUpgradeEventListener() {

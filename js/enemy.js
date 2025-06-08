@@ -40,8 +40,7 @@ class Enemy {
                 this.dashCooldown = 2.0; // seconds between dashes
                 this.isDashing = false;
                 this.dashSpeed = 350; // much faster during dash (increased for larger arena)
-                break;
-            case 'memoryleech':
+                break;            case 'memoryleech':
                 this.radius = 15;
                 this.speed = 50; // slower than datawisp
                 this.health = 80;
@@ -53,6 +52,21 @@ class Enemy {
                 this.drainRate = 0.3; // How much energy to drain per second
                 this.pulseTimer = 0;
                 this.isDraining = false;
+                break;
+            case 'syntaxbreaker':
+                this.radius = 14;
+                this.speed = 85; // medium speed
+                this.health = 45;
+                this.maxHealth = 45;
+                this.color = '#00ff88'; // Green color for tech/code theme
+                this.glowColor = '#00ffaa';
+                this.points = 20;
+                this.glitchRange = 100; // Range to disrupt player controls
+                this.glitchTimer = 0;
+                this.glitchCooldown = 2.5; // seconds between glitch attacks
+                this.isGlitching = false;
+                this.glitchDuration = 1.0; // how long glitch effect lasts
+                this.pulseTimer = 0;
                 break;
             default:
                 this.radius = 10;
@@ -415,6 +429,71 @@ class Enemy {
                     ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2);
                     ctx.fill();
                 }
+                  ctx.globalAlpha = 1.0;
+                break;
+            case 'syntaxbreaker':
+                // Draw digital/glitch effect
+                ctx.strokeStyle = this.isFlashing ? '#ffffff' : '#00ff88';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.8;
+                
+                // Draw glitch range indicator when glitching
+                if (this.isGlitching) {
+                    ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([3, 3]);
+                    
+                    // Draw pulsing glitch range
+                    const pulseIntensity = 0.5 + 0.5 * Math.sin(this.pulseTimer * 10);
+                    ctx.globalAlpha = pulseIntensity;
+                    
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.glitchRange, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    ctx.setLineDash([]);
+                }
+                
+                // Draw digital patterns/lines
+                ctx.strokeStyle = this.isFlashing ? '#ffffff' : '#00ff88';
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.9;
+                
+                // Draw circuit-like patterns
+                const patternCount = 8;
+                for (let i = 0; i < patternCount; i++) {
+                    const angle = (i / patternCount) * Math.PI * 2 + this.pulseTimer * 2;
+                    const lineLength = 6 + 2 * Math.sin(this.pulseTimer * 4 + i);
+                    
+                    const startX = this.x + Math.cos(angle) * (this.radius - 3);
+                    const startY = this.y + Math.sin(angle) * (this.radius - 3);
+                    const endX = startX + Math.cos(angle) * lineLength;
+                    const endY = startY + Math.sin(angle) * lineLength;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                }
+                
+                // Draw glitch effect when attacking
+                if (this.isGlitching) {
+                    // Draw scrambled lines
+                    ctx.strokeStyle = 'rgba(0, 255, 136, 0.8)';
+                    ctx.lineWidth = 1;
+                    
+                    for (let i = 0; i < 6; i++) {
+                        const startX = this.x + (Math.random() - 0.5) * this.radius * 2;
+                        const startY = this.y + (Math.random() - 0.5) * this.radius * 2;
+                        const endX = startX + (Math.random() - 0.5) * 20;
+                        const endY = startY + (Math.random() - 0.5) * 20;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(startX, startY);
+                        ctx.lineTo(endX, endY);
+                        ctx.stroke();
+                    }
+                }
                 
                 ctx.globalAlpha = 1.0;
                 break;
@@ -441,8 +520,7 @@ class Enemy {
                     setTimeout(() => {
                         this.isDashing = false;                    }, 400); // 0.4 seconds of dashing
                 }
-                break;
-            case 'memoryleech':
+                break;            case 'memoryleech':
                 // Update pulse timer for visual effect
                 this.pulseTimer += deltaTime;
                 
@@ -464,6 +542,32 @@ class Enemy {
                     }
                 } else {
                     this.isDraining = false;
+                }
+                break;
+            case 'syntaxbreaker':
+                // Update timers
+                this.glitchTimer += deltaTime;
+                this.pulseTimer += deltaTime;
+                
+                // Calculate distance to player
+                const dx3 = player.x - this.x;
+                const dy3 = player.y - this.y;
+                const distanceToPlayer3 = Math.sqrt(dx3 * dx3 + dy3 * dy3);
+                
+                // Trigger glitch attack when in range and cooldown is ready
+                if (!this.isGlitching && this.glitchTimer >= this.glitchCooldown && distanceToPlayer3 <= this.glitchRange) {
+                    this.isGlitching = true;
+                    this.glitchTimer = 0;
+                    
+                    // Apply glitch effect to player (will be handled by game.js)
+                    if (player.applyGlitchEffect) {
+                        player.applyGlitchEffect(this.glitchDuration);
+                    }
+                    
+                    // Reset glitch state after duration
+                    setTimeout(() => {
+                        this.isGlitching = false;
+                    }, this.glitchDuration * 1000);
                 }
                 break;
         }

@@ -199,16 +199,8 @@ class UI {
         ctx.fillStyle = killColor;
         ctx.font = 'bold 14px Courier New';
         ctx.fillText(`KILLS: ${kills}`, panelX + 10, panelY + 60);
-    }
-    
-    drawGameInfo(ctx, gameData) {
-        // Draw additional game information (FPS, etc.)
-        if (gameData.showDebug) {
-            ctx.fillStyle = this.secondaryColor;
-            ctx.font = '12px Courier New';
-            ctx.textAlign = 'left';
-            ctx.fillText(`FPS: ${gameData.fps || 60}`, 10, this.height - 20);
-        }
+    }    drawGameInfo(ctx, gameData) {
+        // Additional game information display
     }
     
     drawMiniMap(ctx, gameData) {

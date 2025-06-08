@@ -6,14 +6,14 @@ class ModernUI {    constructor() {
             healthFill: document.getElementById('healthFill'),
             healthText: document.getElementById('healthText'),
             healthWarning: document.getElementById('healthWarning'),
-            shieldIndicator: document.getElementById('shieldIndicator'),            // Overclock system - COMPLETELY DISABLED (elements removed from HTML)
-            overclockPanel: null, // document.getElementById('overclockPanel'), 
-            overclockLabel: null, // document.getElementById('overclockLabel'),
-            overclockText: null, // document.getElementById('overclockText'),
-            overclockReady: null, // document.getElementById('overclockReady'),
-            overclockEffects: null, // document.getElementById('overclockEffects'),
-            // Note: All overclock elements completely removed from HTML to eliminate green bar
-              // Dash system
+            shieldIndicator: document.getElementById('shieldIndicator'),            // Overclock system - RESTORED
+            overclockPanel: document.getElementById('overclockPanel'),
+            overclockFill: document.getElementById('overclockFill'),
+            overclockText: document.getElementById('overclockText'),
+            overclockReady: document.getElementById('overclockReady'),
+            overclockEffects: document.getElementById('overclockEffects'),
+            
+            // Dash system
             dashFill: document.getElementById('dashFill'),
             dashText: document.getElementById('dashText'),
             
@@ -41,19 +41,15 @@ class ModernUI {    constructor() {
             
             // Mini map
             minimapCanvas: document.getElementById('minimapCanvas'),
-            
-            // Game over
+              // Game over
             gameOverScreen: document.getElementById('gameOverScreen'),
             finalScore: document.getElementById('finalScore'),
-            finalKills: document.getElementById('finalKills'),            // Debug
-            debugPanel: document.getElementById('debugPanel'),
-            debugInfo: document.getElementById('debugInfo'),
+            finalKills: document.getElementById('finalKills'),
             
             // Settings
             settingsButton: document.getElementById('settingsButton'),
             settingsOverlay: document.getElementById('settingsOverlay'),
             settingsClose: document.getElementById('settingsClose'),
-            debugToggle: document.getElementById('debugToggle'),
             minimapToggle: document.getElementById('minimapToggle'),
             difficultySelect: document.getElementById('difficultySelect'),
               // Pause overlay
@@ -150,10 +146,49 @@ class ModernUI {    constructor() {
             this.elements.shieldIndicator.style.display = 'none';
         }
     }    updateOverclock(player) {
-        // Overclock UI completely disabled - no visual elements exist
-        // The overclock system still functions in the background
-        // Players can still use Q to activate overclock when charged
-        return;
+        if (!this.elements.overclockPanel || !this.elements.overclockFill || 
+            !this.elements.overclockText || !this.elements.overclockReady || 
+            !this.elements.overclockEffects) {
+            return; // Elements don't exist
+        }
+
+        const panel = this.elements.overclockPanel;
+        const fill = this.elements.overclockFill;
+        const text = this.elements.overclockText;
+        const ready = this.elements.overclockReady;
+        const effects = this.elements.overclockEffects;
+
+        // Calculate charge percentage
+        const chargePercent = (player.overclockCharge / player.overclockMaxCharge) * 100;
+        
+        // Update charge bar
+        fill.style.width = `${chargePercent}%`;
+        text.textContent = `CHARGE: ${Math.floor(player.overclockCharge)}/${player.overclockMaxCharge}`;
+
+        // Handle overclock states
+        if (player.isOverclocked) {
+            // Active state
+            panel.style.animation = 'overclockActive 0.5s ease-in-out infinite alternate';
+            fill.className = 'overclock-fill';
+            fill.style.width = '100%';
+            text.textContent = `ACTIVE: ${player.overclockTimer.toFixed(1)}s`;
+            ready.style.display = 'none';
+            effects.style.display = 'block';
+            effects.style.animation = 'overclockActive 0.3s ease-in-out infinite alternate';
+        } else if (player.canActivateOverclock()) {
+            // Ready state
+            panel.style.animation = '';
+            fill.className = 'overclock-fill ready';
+            ready.style.display = 'block';
+            ready.style.animation = 'overclockReadyPulse 1.5s ease-in-out infinite';
+            effects.style.display = 'none';
+        } else {
+            // Charging state
+            panel.style.animation = '';
+            fill.className = 'overclock-fill';
+            ready.style.display = 'none';
+            effects.style.display = 'none';
+        }
     }
       updateDash(player) {
         const fill = this.elements.dashFill;
@@ -327,33 +362,7 @@ class ModernUI {    constructor() {
     }
     
     flashKill() {
-        this.killFlashTimer = 0.5;
-        this.elements.killsDisplay.classList.add('flash');
-    }
-    
-    toggleDebug(show) {
-        if (show) {
-            this.elements.debugPanel.classList.remove('hidden');
-        } else {
-            this.elements.debugPanel.classList.add('hidden');
-        }
-    }
-    
-    updateDebugInfo(gameData) {
-        if (!this.elements.debugPanel.classList.contains('hidden')) {
-            const player = gameData.player;
-            const debugText = [
-                `Player: (${Math.round(player.x)}, ${Math.round(player.y)})`,
-                `Aim: ${Math.round(player.aimDirection * 180 / Math.PI)}°`,
-                `Velocity: (${Math.round(player.velocity.x)}, ${Math.round(player.velocity.y)})`,
-                `Bullets: ${player.bullets.length}`,
-                `Enemies: ${gameData.enemyCount}`,
-                `Overclock: ${player.overclockCharge}/${player.overclockMaxCharge}`,
-                `Health: ${player.health}/${player.maxHealth}`
-            ].join('<br>');
-            
-            this.elements.debugInfo.innerHTML = debugText;
-        }
+        this.killFlashTimer = 0.5;        this.elements.killsDisplay.classList.add('flash');
     }
     
     updateWave(enemyManager) {
@@ -455,20 +464,10 @@ class ModernUI {    constructor() {
     }
     
     // Legacy compatibility methods for canvas-based rendering
-    render(ctx, gameData) {
-        // This method is called by the game but we handle everything in update()
+    render(ctx, gameData) {        // This method is called by the game but we handle everything in update()
         // Keep it for compatibility but move logic to update()
         this.update(1/60, gameData); // Assume 60fps for compatibility
-        
-        if (gameData.showDebug) {
-            this.updateDebugInfo(gameData);
-        }
-    }
-    
-    drawDebugInfo(ctx, gameData) {
-        // Legacy method - now handled by updateDebugInfo
-        this.updateDebugInfo(gameData);
-    }
+      }
     
     setupSettingsListeners() {
         // Settings button click
@@ -487,15 +486,9 @@ class ModernUI {    constructor() {
         this.elements.settingsOverlay.addEventListener('click', (e) => {
             if (e.target === this.elements.settingsOverlay) {
                 this.hideSettings();
-            }
-        });
+            }        });
         
         // Settings controls
-        this.elements.debugToggle.addEventListener('change', (e) => {
-            // This will be handled by the game's input system
-            console.log('Debug toggle:', e.target.checked);
-        });
-        
         this.elements.minimapToggle.addEventListener('change', (e) => {
             // Toggle minimap visibility
             const minimap = document.querySelector('.minimap-container');
@@ -528,13 +521,8 @@ class ModernUI {    constructor() {
     hideSettings() {
         this.settingsVisible = false;
         this.elements.settingsOverlay.classList.add('hidden');
-    }
-    
-    updateSettingsState(gameData) {
-        // Sync debug toggle with actual debug state
-        if (this.elements.debugToggle.checked !== gameData.showDebug) {
-            this.elements.debugToggle.checked = gameData.showDebug;
-        }
+    }    updateSettingsState(gameData) {
+        // Settings state synchronization (debug functionality removed)
     }
     
     // Upgrade system functionality

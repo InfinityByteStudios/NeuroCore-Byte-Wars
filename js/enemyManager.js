@@ -127,7 +127,8 @@ class EnemyManager {    constructor(arena) {
             // Enemy type distribution changes with wave progression
             const datawispRatio = Math.max(0.6 - (waveNumber * 0.05), 0.2);
             const memoryleechRatio = waveNumber >= 8 ? Math.min(0.15 + (waveNumber * 0.01), 0.3) : 0; // Start appearing at wave 8
-            const bitbugRatio = 1 - datawispRatio - memoryleechRatio;
+            const syntaxbreakerRatio = waveNumber >= 6 ? Math.min(0.10 + (waveNumber * 0.005), 0.15) : 0; // Start appearing at wave 6
+            const bitbugRatio = 1 - datawispRatio - memoryleechRatio - syntaxbreakerRatio;
             
             // Generate enemy list
             for (let i = 0; i < baseEnemyCount; i++) {
@@ -137,6 +138,8 @@ class EnemyManager {    constructor(arena) {
                     enemyType = 'datawisp';
                 } else if (rand < datawispRatio + memoryleechRatio) {
                     enemyType = 'memoryleech';
+                } else if (rand < datawispRatio + memoryleechRatio + syntaxbreakerRatio) {
+                    enemyType = 'syntaxbreaker';
                 } else {
                     enemyType = 'bitbug';
                 }
@@ -147,9 +150,12 @@ class EnemyManager {    constructor(arena) {
             if (waveNumber >= 10) {
                 const bonusEnemies = Math.floor(waveNumber / 5);
                 for (let i = 0; i < bonusEnemies; i++) {
-                    // Higher chance of Memory Leech in bonus enemies for late waves
-                    if (waveNumber >= 12 && Math.random() < 0.4) {
+                    // Higher chance of special enemies in bonus enemies for late waves
+                    const rand = Math.random();
+                    if (waveNumber >= 12 && rand < 0.3) {
                         config.enemies.push('memoryleech');
+                    } else if (waveNumber >= 8 && rand < 0.5) {
+                        config.enemies.push('syntaxbreaker');
                     } else {
                         config.enemies.push('bitbug');
                     }

@@ -49,43 +49,57 @@ body {
 /* Settings Button */
 .settings-button {
     position: absolute;
-    top: 5px;
-    left: 5px;
-    width: 32px;
-    height: 30px;
-    background: rgba(0, 255, 255, 0.1);
-    border: 2px solid #00ffff;
-    border-radius: 6px;
+    top: 10px;
+    left: 10px;
+    width: 45px;
+    height: 40px;
+    background: rgba(0, 255, 255, 0.25);
+    border: 3px solid #00ffff;
+    border-radius: 8px;
     cursor: pointer;
     pointer-events: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
     z-index: 15;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    animation: settingsButtonPulse 2s ease-in-out infinite;
 }
 
 .settings-button:hover {
-    background: rgba(0, 255, 255, 0.2);
-    border-color: #00ffff;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-    transform: scale(1.05);
+    background: rgba(0, 255, 255, 0.4);
+    border-color: #ffffff;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.8);
+    transform: scale(1.1);
 }
 
 .hamburger-line {
-    width: 16px;
-    height: 2px;
+    width: 20px;
+    height: 3px;
     background: #00ffff;
-    border-radius: 1px;
+    border-radius: 2px;
     transition: all 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
 }
 
 .settings-button:hover .hamburger-line {
     background: #ffffff;
-    box-shadow: 0 0 10px #00ffff;
+    box-shadow: 0 0 15px #00ffff;
+}
+
+@keyframes settingsButtonPulse {
+    0%, 100% { 
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        border-color: #00ffff;
+    }
+    50% { 
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+        border-color: #44ffff;
+    }
 }
 
 /* Health Bar Styles */
@@ -196,10 +210,91 @@ body {
 /* Overclock functionality still works, but no visual elements exist */
 /* This prevents any green bar styling from appearing */
 
+/* Neural Overclock System Styles */
+.overclock-container {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    width: 200px;
+    min-height: 60px;
+}
+
+.overclock-panel {
+    background: rgba(68, 0, 102, 0.4);
+    border: 2px solid #ff00ff;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 0 12px rgba(255, 0, 255, 0.4);
+}
+
+.overclock-label {
+    color: #ff00ff;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    text-shadow: 0 0 4px #ff00ff;
+    text-align: center;
+}
+
+.overclock-bar {
+    width: 100%;
+    height: 20px;
+    background: #111111;
+    border: 1px solid #ff00ff;
+    border-radius: 3px;
+    overflow: visible;
+    position: relative;
+    margin-bottom: 4px;
+}
+
+.overclock-fill {
+    height: 100%;
+    background: linear-gradient(to bottom, #ff00ff, #cc00cc);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.overclock-fill.ready {
+    animation: overclockPulse 1s ease-in-out infinite alternate;
+}
+
+.overclock-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000000;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.overclock-ready {
+    color: #ff00ff;
+    font-size: 11px;
+    margin-top: 2px;
+    text-align: center;
+    font-weight: bold;
+    animation: overclockReadyPulse 1s ease-in-out infinite;
+    text-shadow: 0 0 3px #ff00ff;
+}
+
+.overclock-effects {
+    color: #ff00ff;
+    font-size: 11px;
+    margin-top: 2px;
+    text-align: center;
+    font-weight: bold;
+    animation: overclockActive 0.3s ease-in-out infinite alternate;
+    text-shadow: 0 0 3px #ff00ff;
+}
+
 /* Dash Indicator Styles */
 .dash-container {
     position: absolute;
-    top: 220px;
+    top: 140px;
     left: 20px;
     width: 150px;
     min-height: 40px;
@@ -263,7 +358,7 @@ body {
 /* Safe Zone Timer Styles */
 .safezone-container {
     position: absolute;
-    top: 280px;
+    top: 190px;
     left: 20px;
     width: 180px;
     min-height: 60px;
@@ -405,7 +500,7 @@ body {
 /* Wave Information Panel Styles */
 .wave-container {
     position: absolute;
-    top: 360px;
+    top: 260px;
     left: 20px;
     width: 220px;
 }
@@ -491,7 +586,7 @@ body {
 /* Upgrades Panel */
 .upgrades-container {
     position: absolute;
-    top: 520px;
+    top: 400px;
     left: 20px;
     width: 220px;
 }
@@ -665,6 +760,10 @@ body {
 }
 
 /* overclockPulse animation removed */
+@keyframes remainingAnimation {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0.8; transform: scale(1.02); }
+}
 
 @keyframes readyPulse {
     0% { opacity: 1; }
@@ -705,6 +804,21 @@ body {
 @keyframes warningFill {
     0% { opacity: 1; }
     100% { opacity: 0.7; }
+}
+
+@keyframes overclockPulse {
+    0% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+@keyframes overclockReadyPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes overclockActive {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0.8; transform: scale(1.02); }
 }
 
 /* Settings Overlay Styles */
@@ -1287,31 +1401,7 @@ body {
     }
 }
 
-/* Debug Panel Styles */
-.debug-panel {    position: absolute;
-    top: 120px;
-    left: 20px;
-    width: 300px;
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid #00ff00;
-    border-radius: 4px;
-    padding: 10px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    color: #00ff00;
-    z-index: 15;
-    pointer-events: none;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-}
 
-.debug-panel.hidden {
-    display: none;
-}
-
-#debugInfo {
-    line-height: 1.4;
-    white-space: pre-wrap;
-}
 
 /* Splash Screen Styles */
 .splash-screen {
