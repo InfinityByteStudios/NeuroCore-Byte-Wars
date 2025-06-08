@@ -1,7 +1,9 @@
-class Game {
-    constructor() {
+class Game {    constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        
+        // Initialize audio manager
+        this.audioManager = new AudioManager();
         
         // Set up dynamic canvas resizing
         this.setupCanvasResize();
@@ -17,11 +19,15 @@ class Game {
         this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
         this.upgradeSystem = new UpgradeSystem(); // Add upgrade system
         this.visualEffects = new VisualEffects(); // Visual effects system
-        this.ui = new ModernUI(); // Use the new modern UI system// Game state
+        this.ui = new ModernUI(); // Use the new modern UI system        // Game state
         this.score = 0;
         this.kills = 0;
         this.gameOver = false;
         this.paused = true; // Start paused during splash screen
+        
+        // Survival time tracking
+        this.gameStartTime = 0;
+        this.survivalTime = 0;
           // Game timing
         this.lastTime = 0;
         this.running = true;
@@ -34,11 +40,73 @@ class Game {
         
         this.showSplashScreen();
     }    showSplashScreen() {
+        // Try to start intro music immediately when game loads
+        console.log('🎵 Attempting to start Loading Intro music...');
+        this.audioManager.testAutoplayAndPrompt().then(result => {
+            if (result.success) {
+                console.log('✅ Audio autoplay successful');
+                // If autoplay works, proceed normally
+                this.proceedWithSplashSequence();
+            } else if (result.requiresPrompt) {
+                console.log('🔇 Audio autoplay blocked, showing prompt');
+                // If autoplay is blocked, show audio prompt
+                this.showAudioPrompt();
+            }
+        });
+    }
+
+    proceedWithSplashSequence() {
         // Show studio splash screen for 3 seconds, then transition to game logo
         setTimeout(() => {
             this.showGameLogo();
         }, 3000);
-    }    showGameLogo() {
+    }    showAudioPrompt() {
+        const audioPrompt = document.getElementById('audioPrompt');
+        const enableAudioBtn = document.getElementById('enableAudioBtn');
+        const continueWithoutAudioBtn = document.getElementById('continueWithoutAudioBtn');
+        
+        if (audioPrompt && enableAudioBtn && continueWithoutAudioBtn) {
+            // Show the audio prompt overlay
+            audioPrompt.classList.remove('hidden');
+            
+            // Set up event listeners for the buttons
+            const enableAudioHandler = () => {
+                console.log('🎵 User enabled audio');
+                this.audioManager.enableAudioAfterInteraction().then(success => {
+                    if (success) {
+                        console.log('✅ Audio enabled after user interaction');
+                    } else {
+                        console.log('❌ Audio still failed after user interaction');
+                    }
+                });
+                this.hideAudioPromptAndProceed();
+                enableAudioBtn.removeEventListener('click', enableAudioHandler);
+                continueWithoutAudioBtn.removeEventListener('click', continueWithoutAudioHandler);
+            };
+            
+            const continueWithoutAudioHandler = () => {
+                console.log('🔇 User chose to continue without audio');
+                this.audioManager.disableAudio();
+                this.hideAudioPromptAndProceed();
+                enableAudioBtn.removeEventListener('click', enableAudioHandler);
+                continueWithoutAudioBtn.removeEventListener('click', continueWithoutAudioHandler);
+            };
+            
+            enableAudioBtn.addEventListener('click', enableAudioHandler);
+            continueWithoutAudioBtn.addEventListener('click', continueWithoutAudioHandler);
+        } else {
+            console.warn('Audio prompt elements not found, proceeding without audio prompt');
+            this.proceedWithSplashSequence();
+        }
+    }
+
+    hideAudioPromptAndProceed() {
+        const audioPrompt = document.getElementById('audioPrompt');
+        if (audioPrompt) {
+            audioPrompt.classList.add('hidden');
+        }
+        this.proceedWithSplashSequence();
+    }showGameLogo() {
         const studioSplash = document.getElementById('studioSplash');
         const gameSplash = document.getElementById('gameSplash');
         
@@ -55,12 +123,18 @@ class Game {
             // Clean up studio splash after it's fully faded
             setTimeout(() => {
                 studioSplash.style.display = 'none';
-                studioSplash.classList.remove('fade-out');
-                
-                // Show game logo for 2.5 seconds, then fade to game
+                studioSplash.classList.remove('fade-out');                // Show game logo for 2.0 seconds, then start audio crossfade and visual transition
                 setTimeout(() => {
-                    this.startGameFromLogo();
-                }, 2500);
+                    // Start audio crossfade 500ms before visual transition for seamless experience
+                    this.audioManager.crossfadeAudio().catch(error => {
+                        console.log('🔇 Enhanced crossfade failed, attempting fallback audio start:', error);
+                    });
+                    
+                    // Start visual transition after brief delay
+                    setTimeout(() => {
+                        this.startGameFromLogo();
+                    }, 500);
+                }, 2000);
             }, 1000);
         } else {
             this.hideSplashScreen();
@@ -68,6 +142,9 @@ class Game {
     }    startGameFromLogo() {
         const gameSplash = document.getElementById('gameSplash');
         const gameContainer = document.getElementById('gameContainer');
+        
+        // Audio crossfade is handled earlier in showGameLogo() for perfect timing
+        console.log('🎬 Starting visual transition to game...');
         
         if (gameSplash) {
             // Start fading out game logo
@@ -270,10 +347,19 @@ class Game {
         };
         this.ui.update(deltaTime, gameData);
           requestAnimationFrame((time) => this.gameLoop(time));
-    }
-      update(deltaTime) {
+    }    update(deltaTime) {
         // Don't update game if game over
-        if (this.gameOver) return;        // Update player and capture action events for visual effects
+        if (this.gameOver) return;
+
+        // Update survival time if game has started
+        if (this.gameStarted) {
+            if (this.gameStartTime === 0) {
+                this.gameStartTime = performance.now();
+            }
+            this.survivalTime = (performance.now() - this.gameStartTime) / 1000; // Convert to seconds
+        }
+
+        // Update player and capture action events for visual effects
         const playerActionEvents = this.player.update(deltaTime, this.input, this.arena);
         
         // Update arena (safe zone timer)
@@ -373,8 +459,22 @@ class Game {
             if (this.ui.settingsVisible) {
                 this.ui.hideSettings();
             }
+        }        // Toggle help display (pauses game)
+        if (this.input.wasKeyPressed('KeyH')) {
+            if (this.ui.helpVisible) {
+                // Hide help and unpause
+                this.ui.hideHelp();
+                this.paused = false;
+                this.wasManuallyPaused = false; // Clear manual pause flag
+            } else {
+                // Show help and pause
+                this.ui.toggleHelp();
+                this.paused = true;
+                this.wasManuallyPaused = true; // Mark as manual pause
+            }
         }
-          // Toggle changelog display (pauses game)
+
+        // Toggle changelog display (pauses game)
         if (this.input.wasKeyPressed('KeyC')) {
             if (this.ui.changelogVisible) {
                 // Hide changelog and unpause
@@ -388,12 +488,15 @@ class Game {
                 this.wasManuallyPaused = true; // Mark as manual pause
             }
         }
-        
-        // Toggle general pause
+          // Toggle general pause
         if (this.input.wasKeyPressed('KeyP')) {
             if (this.ui.changelogVisible) {
                 // If changelog is open, close it first
                 this.ui.hideChangelog();
+            }
+            if (this.ui.helpVisible) {
+                // If help is open, close it first
+                this.ui.hideHelp();
             }
             this.paused = !this.paused;
             this.wasManuallyPaused = this.paused; // Track manual pause state
@@ -408,6 +511,8 @@ class Game {
             this.changeDifficultyOnGameOver();
         }
     }    restartGame() {
+        // Reset audio using AudioManager
+        this.audioManager.reset();
         
         // Reset player
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
@@ -423,17 +528,19 @@ class Game {
         
         // Reset upgrade system
         this.upgradeSystem.reset();
-        
-        // Reset game state
+          // Reset game state
         this.score = 0;
         this.kills = 0;
         this.gameOver = false;
         this.gameStarted = false; // Reset game started flag
         
+        // Reset survival time tracking
+        this.gameStartTime = 0;
+        this.survivalTime = 0;
+        
         // Show difficulty selection again
-        this.showDifficultySelection();
-    }
-    
+        this.showDifficultySelection();    }
+
     renderOverclockScreenEffects() {
         // Background color shift during Overclock
         const time = Date.now() / 1000;

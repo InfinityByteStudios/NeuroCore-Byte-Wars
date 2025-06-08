@@ -24,10 +24,10 @@ class ModernUI {    constructor() {
             safezoneFill: document.getElementById('safezoneFill'),
             safezoneText: document.getElementById('safezoneText'),
             safezoneStatus: document.getElementById('safezoneStatus'),
-            
-            // Stats
+              // Stats
             scoreDisplay: document.getElementById('scoreDisplay'),
-            killsDisplay: document.getElementById('killsDisplay'),            
+            killsDisplay: document.getElementById('killsDisplay'),
+            survivalTimeDisplay: document.getElementById('survivalTimeDisplay'),
             // Wave system
             waveTitle: document.getElementById('waveTitle'),
             waveStatus: document.getElementById('waveStatus'),
@@ -58,14 +58,17 @@ class ModernUI {    constructor() {
             // Upgrade system
             upgradeOverlay: document.getElementById('upgradeOverlay'),
             upgradeChoices: document.getElementById('upgradeChoices')        };
-        
-        // UI state
+          // UI state
         this.changelogVisible = false;
         this.settingsVisible = false;
         this.upgradeVisible = false;
+        this.helpVisible = false;
         
         // Get changelog element
         this.changelogOverlay = document.getElementById('changelogOverlay');
+        
+        // Get help element
+        this.helpOverlay = document.getElementById('helpOverlay');
         
         // Setup settings event listeners
         this.setupSettingsListeners();
@@ -81,16 +84,15 @@ class ModernUI {    constructor() {
         this.updateHealth(gameData.player);
         this.updateOverclock(gameData.player);
         this.updateDash(gameData.player);        this.updateSafeZone(gameData.arena);
-        this.updateStats(gameData.score, gameData.kills);        
+        this.updateStats(gameData.score, gameData.kills, gameData.survivalTime);        
         this.updateWave(gameData.enemyManager);
         this.updateUpgrades(gameData.upgradeSystem);
         this.updateMiniMap(gameData);
         
         // Sync settings with game state
         this.updateSettingsState(gameData);
-        
-        // Update pause overlay
-        if (gameData.paused && !this.changelogVisible && !this.settingsVisible) {
+          // Update pause overlay
+        if (gameData.paused && !this.changelogVisible && !this.settingsVisible && !this.helpVisible) {
             this.showPauseOverlay();
         } else {
             this.hidePauseOverlay();
@@ -272,10 +274,15 @@ class ModernUI {    constructor() {
             statusDiv.className = 'safezone-status';
         }
     }
-    
-    updateStats(score, kills) {
+      updateStats(score, kills, survivalTime) {
         this.elements.scoreDisplay.textContent = `SCORE: ${score}`;
         this.elements.killsDisplay.textContent = `KILLS: ${kills}`;
+        
+        // Format survival time as MM:SS
+        const minutes = Math.floor(survivalTime / 60);
+        const seconds = Math.floor(survivalTime % 60);
+        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        this.elements.survivalTimeDisplay.textContent = `TIME: ${timeString}`;
     }
       updateMiniMap(gameData) {
         const ctx = this.minimapCtx;
@@ -331,8 +338,7 @@ class ModernUI {    constructor() {
     hideGameOver() {
         this.elements.gameOverScreen.style.display = 'none';
     }
-    
-    // Changelog functionality
+      // Changelog functionality
     toggleChangelog() {
         this.changelogVisible = !this.changelogVisible;
         if (this.changelogVisible) {
@@ -344,6 +350,26 @@ class ModernUI {    constructor() {
       hideChangelog() {
         this.changelogVisible = false;
         this.changelogOverlay.classList.add('hidden');
+    }
+    
+    // Help system functionality
+    toggleHelp() {
+        this.helpVisible = !this.helpVisible;
+        if (this.helpVisible) {
+            this.helpOverlay.classList.remove('hidden');
+        } else {
+            this.helpOverlay.classList.add('hidden');
+        }
+    }
+    
+    showHelp() {
+        this.helpVisible = true;
+        this.helpOverlay.classList.remove('hidden');
+    }
+    
+    hideHelp() {
+        this.helpVisible = false;
+        this.helpOverlay.classList.add('hidden');
     }
     
     // Pause overlay functionality
