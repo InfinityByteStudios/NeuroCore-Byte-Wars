@@ -119,13 +119,12 @@ class ModernUI {    constructor() {
             }
         }
     }
-    
-    updateHealth(player) {
+      updateHealth(player) {
         const healthPercent = player.health / player.maxHealth;
         
         // Update health bar fill
         this.elements.healthFill.style.width = `${healthPercent * 100}%`;
-        this.elements.healthText.textContent = `${player.health}/${player.maxHealth}`;
+        this.elements.healthText.textContent = `${Math.round(player.health)}/${Math.round(player.maxHealth)}`;
         
         // Update health bar color based on health level
         this.elements.healthFill.className = 'health-fill';

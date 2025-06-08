@@ -5,14 +5,19 @@ class Game {
         
         // Set up dynamic canvas resizing
         this.setupCanvasResize();
-        
-        // Initialize game systems
+          // Initialize game systems
         this.arena = new Arena(this.canvas.width, this.canvas.height);
-        this.input = new InputManager();        this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
-        this.enemyManager = new EnemyManager(this.arena);
+        this.input = new InputManager();
+        this.difficultyManager = new DifficultyManager(); // Add difficulty system
+          this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
+        
+        // Apply difficulty modifiers to player
+        this.difficultyManager.applyPlayerModifiers(this.player);
+        
+        this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
         this.upgradeSystem = new UpgradeSystem(); // Add upgrade system
         this.visualEffects = new VisualEffects(); // Visual effects system
-        this.ui = new ModernUI(); // Use the new modern UI system        // Game state
+        this.ui = new ModernUI(); // Use the new modern UI system// Game state
         this.score = 0;
         this.kills = 0;
         this.gameOver = false;
@@ -21,9 +26,11 @@ class Game {
         this.lastTime = 0;
         this.running = true;
         this.gameStarted = false; // Track if game has started
-        
-        // Set up upgrade system event listener
+          // Set up upgrade system event listener
         this.setupUpgradeEventListener();
+        
+        // Set up auto-pause when user switches tabs
+        this.setupAutoFocusPause();
         
         this.showSplashScreen();
     }    showSplashScreen() {
@@ -85,12 +92,12 @@ class Game {
             setTimeout(() => {
                 gameSplash.style.display = 'none';
                 gameSplash.classList.remove('fade-out');
-                this.start();
+                this.showDifficultySelection();
             }, 1000);
         } else {
-            this.start();
+            this.showDifficultySelection();
         }
-    }hideSplashScreen() {
+    }    hideSplashScreen() {
         // This method is now only used as a fallback if splash elements are missing
         const studioSplash = document.getElementById('studioSplash');
         const gameSplash = document.getElementById('gameSplash');
@@ -98,6 +105,71 @@ class Game {
         if (studioSplash) studioSplash.style.display = 'none';
         if (gameSplash) gameSplash.style.display = 'none';
         this.start();
+    }
+
+    showDifficultySelection() {
+        const difficultyScreen = document.getElementById('difficultyScreen');
+        if (difficultyScreen) {
+            difficultyScreen.style.display = 'flex';
+            
+            // Set up difficulty selection event listeners
+            this.setupDifficultyEventListeners();
+        } else {
+            // Fallback: start with default difficulty if difficulty screen is missing
+            console.warn('Difficulty selection screen not found, starting with default difficulty');
+            this.start();
+        }
+    }
+
+    setupDifficultyEventListeners() {
+        const difficultyOptions = document.querySelectorAll('.difficulty-option');
+        
+        difficultyOptions.forEach(option => {
+            option.addEventListener('click', (event) => {
+                const difficulty = event.currentTarget.getAttribute('data-difficulty');
+                this.selectDifficulty(difficulty);
+            });
+        });
+    }
+
+    selectDifficulty(difficulty) {
+        console.log(`🎮 Player selected difficulty: ${difficulty}`);
+        
+        // Set the difficulty in the difficulty manager
+        if (this.difficultyManager.setDifficulty(difficulty)) {
+            // Re-apply difficulty modifiers to player
+            this.difficultyManager.applyPlayerModifiers(this.player);
+            
+            // Update enemy manager with new difficulty
+            this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
+            
+            // Hide difficulty selection screen
+            const difficultyScreen = document.getElementById('difficultyScreen');
+            if (difficultyScreen) {
+                difficultyScreen.style.display = 'none';
+            }
+              // Start the game
+            this.start();
+        } else {
+            console.error(`Failed to set difficulty: ${difficulty}`);
+        }
+    }
+
+    changeDifficultyOnGameOver() {
+        console.log('🎮 Player requested difficulty change from game over screen');
+        
+        // Hide game over screen
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        if (gameOverScreen) {
+            gameOverScreen.style.display = 'none';
+        }
+        
+        // Reset to pre-game state
+        this.gameOver = false;
+        this.gameStarted = false;
+        
+        // Show difficulty selection
+        this.showDifficultySelection();
     }start() {
         this.gameStarted = true;
         this.paused = false; // Unpause the game when it starts
@@ -217,10 +289,13 @@ class Game {
         
         // Update enemies
         this.enemyManager.update(deltaTime, this.player);
-        
-        // Update visual effects
+          // Update visual effects
         this.visualEffects.update(deltaTime);
-          // Check bullet-enemy collisions
+        
+        // Handle difficulty-based healing
+        this.handleDifficultyHealing(deltaTime);
+        
+        // Check bullet-enemy collisions
         const collisionResult = this.enemyManager.checkBulletCollisions(this.player.bullets, this.visualEffects);
         if (collisionResult.points > 0) {
             this.score += collisionResult.points;
@@ -237,12 +312,14 @@ class Game {
         }        // Check player-enemy collisions
         const hitEnemy = this.enemyManager.checkPlayerCollisions(this.player, this.arena);
         if (hitEnemy) {
-            const damage = 20; // Enemy contact damage
+            // Get enemy-specific damage from difficulty manager
+            const damage = this.difficultyManager.getEnemyDamage(hitEnemy.type);
             const playerDied = this.player.takeDamage(damage);
             
             // Trigger visual effects for player damage
-            this.visualEffects.onPlayerHit(this.player.x, this.player.y, damage);
-              if (playerDied) {
+            this.visualEffects.onPlayerHit(this.player.x, this.player.y, damage);if (playerDied) {
+                // Reset safe zone when player dies
+                this.arena.resetSafeZone();
                 this.gameOver = true;
                 console.log('Game Over!');
             }
@@ -297,17 +374,18 @@ class Game {
                 this.ui.hideSettings();
             }
         }
-        
-        // Toggle changelog display (pauses game)
+          // Toggle changelog display (pauses game)
         if (this.input.wasKeyPressed('KeyC')) {
             if (this.ui.changelogVisible) {
                 // Hide changelog and unpause
                 this.ui.hideChangelog();
                 this.paused = false;
+                this.wasManuallyPaused = false; // Clear manual pause flag
             } else {
                 // Show changelog and pause
                 this.ui.toggleChangelog();
                 this.paused = true;
+                this.wasManuallyPaused = true; // Mark as manual pause
             }
         }
         
@@ -318,11 +396,16 @@ class Game {
                 this.ui.hideChangelog();
             }
             this.paused = !this.paused;
+            this.wasManuallyPaused = this.paused; // Track manual pause state
         }
-        
-        // Restart game
+          // Restart game
         if (this.gameOver && this.input.isKeyPressed('KeyR')) {
             this.restartGame();
+        }
+        
+        // Change difficulty when game over
+        if (this.gameOver && this.input.wasKeyPressed('KeyD')) {
+            this.changeDifficultyOnGameOver();
         }
     }    restartGame() {
         
@@ -330,8 +413,12 @@ class Game {
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         
         // Reset enemy manager
-        this.enemyManager = new EnemyManager(this.arena);
-          // Clear visual effects
+        this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
+        
+        // Reset safe zone
+        this.arena.resetSafeZone();
+        
+        // Clear visual effects
         this.visualEffects.clear();
         
         // Reset upgrade system
@@ -341,6 +428,10 @@ class Game {
         this.score = 0;
         this.kills = 0;
         this.gameOver = false;
+        this.gameStarted = false; // Reset game started flag
+        
+        // Show difficulty selection again
+        this.showDifficultySelection();
     }
     
     renderOverclockScreenEffects() {
@@ -412,8 +503,7 @@ class Game {
             this.handleUpgradeSelected(event.detail.upgradeId);
         });
     }
-    
-    handleUpgradeSelected(upgradeId) {
+      handleUpgradeSelected(upgradeId) {
         console.log(`🔧 Player selected upgrade: ${upgradeId}`);
         
         // Apply the upgrade
@@ -424,6 +514,7 @@ class Game {
         
         // Resume the game
         this.paused = false;
+        this.wasManuallyPaused = false; // Clear manual pause flag when resuming
         
         // Continue with next wave
         this.enemyManager.continueAfterUpgrade();
@@ -437,19 +528,19 @@ class Game {
     
     checkForWaveCompletion() {
         const waveState = this.enemyManager.getWaveState();
-        
-        // Check if wave just completed and we haven't shown upgrade menu yet
+          // Check if wave just completed and we haven't shown upgrade menu yet
         if (waveState === 'completed' && !this.upgradeSystem.shouldShowUpgradeMenu() && !this.paused) {
             const currentWave = this.enemyManager.getCurrentWave();
+            
+            // Handle wave completion healing before showing upgrade menu
+            this.handleWaveCompletionHealing(currentWave);
             
             // Show upgrade menu after every wave (except first preparation)
             if (currentWave > 1) {
                 this.showUpgradeMenu();
             }
         }
-    }
-    
-    showUpgradeMenu() {
+    }    showUpgradeMenu() {
         console.log('🎮 Showing upgrade menu...');
         
         // Generate upgrade choices
@@ -461,9 +552,85 @@ class Game {
             
             // Pause the game
             this.paused = true;
+            this.wasManuallyPaused = true; // Upgrade menu pause is considered manual
             
             // Show the upgrade menu in UI
             this.ui.showUpgradeMenu(choices);
+        }
+    }
+    
+    setupAutoFocusPause() {
+        // Track if the game was manually paused before losing focus
+        this.wasManuallyPaused = false;
+        
+        // Pause game when window loses focus (user switches tabs)
+        window.addEventListener('blur', () => {
+            // Only auto-pause if the game has started and is currently running
+            if (this.gameStarted && !this.gameOver && !this.paused) {
+                this.wasManuallyPaused = false; // This is an auto-pause
+                this.paused = true;
+                console.log('🔄 Game auto-paused (focus lost)');
+            } else if (this.gameStarted && !this.gameOver && this.paused) {
+                // Game was already paused, remember it was manual
+                this.wasManuallyPaused = true;
+            }
+        });
+          // Resume game when window regains focus (user returns to tab)
+        window.addEventListener('focus', () => {
+            // Only auto-resume if the game has started, is not game over, 
+            // is currently paused, and was not manually paused
+            if (this.gameStarted && !this.gameOver && this.paused && !this.wasManuallyPaused) {
+                this.paused = false;
+                console.log('▶️ Game auto-resumed (focus regained)');
+            }
+        });
+    }
+
+    // Difficulty-based healing system methods
+    handleDifficultyHealing(deltaTime) {
+        // Only heal during waves if difficulty allows
+        if (this.difficultyManager.shouldHealPlayer(this.enemyManager.getCurrentWave(), true)) {
+            const healingRate = this.difficultyManager.getHealingRate();
+            if (healingRate > 0 && this.player.health < this.player.maxHealth) {
+                const oldHealth = this.player.health;
+                this.player.heal(healingRate * deltaTime);
+                
+                // Trigger healing visual effect if health actually increased
+                if (this.player.health > oldHealth) {
+                    this.visualEffects.onPlayerHeal(this.player.x, this.player.y);
+                }
+            }
+        }
+    }
+
+    handleWaveCompletionHealing(currentWave) {
+        // Check if player should heal after wave completion
+        if (this.difficultyManager.shouldHealPlayer(currentWave, false)) {
+            const oldHealth = this.player.health;
+            
+            // Different healing amounts based on difficulty
+            const config = this.difficultyManager.getCurrentDifficulty();
+            let healAmount = 0;
+            
+            switch (config.healingType) {
+                case 'after_wave':
+                    healAmount = Math.ceil(this.player.maxHealth * 0.25); // 25% of max health
+                    break;
+                case 'every_3_waves':
+                    healAmount = Math.ceil(this.player.maxHealth * 0.5); // 50% of max health for every 3rd wave
+                    break;
+                default:
+                    healAmount = 0;
+            }
+            
+            if (healAmount > 0 && this.player.health < this.player.maxHealth) {
+                this.player.heal(healAmount);
+                
+                // Trigger healing visual effect with heal amount
+                this.visualEffects.onPlayerHeal(this.player.x, this.player.y, healAmount);
+                
+                console.log(`💚 Wave ${currentWave} healing: +${healAmount} HP (${config.healingType})`);
+            }
         }
     }
 }

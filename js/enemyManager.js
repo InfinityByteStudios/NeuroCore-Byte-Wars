@@ -1,6 +1,7 @@
-class EnemyManager {    constructor(arena) {
+class EnemyManager {    constructor(arena, difficultyManager = null) {
         this.enemies = [];
         this.arena = arena;
+        this.difficultyManager = difficultyManager;
         
         // Wave-based spawning system
         this.currentWave = 1;
@@ -22,16 +23,17 @@ class EnemyManager {    constructor(arena) {
         
         // Initialize first wave
         this.setupWave(this.currentWave);
-    }    update(deltaTime, player) {
+        
+        console.log('🎯 Enemy Manager initialized with difficulty support');
+    }update(deltaTime, player) {
         this.waveTimer += deltaTime;
         
         // Handle wave state transitions
         this.updateWaveState(deltaTime, player);
-        
-        // Update all enemies
+          // Update all enemies
         for (let enemy of this.enemies) {
             if (enemy.active) {
-                enemy.update(deltaTime, player, this.arena);
+                enemy.update(deltaTime, player, this.arena, this.enemies);
             }
         }
           // Remove inactive enemies
@@ -105,8 +107,7 @@ class EnemyManager {    constructor(arena) {
             acc[type] = (acc[type] || 0) + 1;
             return acc;
         }, {}));
-    }
-      generateWaveConfig(waveNumber) {
+    }      generateWaveConfig(waveNumber) {
         const config = {
             number: waveNumber,
             enemies: []
@@ -115,14 +116,26 @@ class EnemyManager {    constructor(arena) {
         // Phase 1: Only basic enemies (datawisp) for first 5 waves
         if (waveNumber <= 5) {
             // Simple progression: 3-8 basic enemies
-            const baseEnemyCount = Math.min(3 + waveNumber, 8);
+            let baseEnemyCount = Math.min(3 + waveNumber, 8);
+            
+            // Apply difficulty multiplier if available
+            if (this.difficultyManager) {
+                const multiplier = this.difficultyManager.getWaveSpawnMultiplier();
+                baseEnemyCount = Math.ceil(baseEnemyCount * multiplier);
+            }
             
             // Only spawn datawisp enemies in phase 1
             for (let i = 0; i < baseEnemyCount; i++) {
                 config.enemies.push('datawisp');
             }        } else {
             // Original complex wave system for later phases
-            const baseEnemyCount = Math.min(5 + Math.floor(waveNumber / 2), 18);
+            let baseEnemyCount = Math.min(5 + Math.floor(waveNumber / 2), 18);
+            
+            // Apply difficulty multiplier if available
+            if (this.difficultyManager) {
+                const multiplier = this.difficultyManager.getWaveSpawnMultiplier();
+                baseEnemyCount = Math.ceil(baseEnemyCount * multiplier);
+            }
             
             // Enemy type distribution changes with wave progression
             const datawispRatio = Math.max(0.6 - (waveNumber * 0.05), 0.2);
@@ -145,10 +158,15 @@ class EnemyManager {    constructor(arena) {
                 }
                 config.enemies.push(enemyType);
             }
-            
-            // Add bonus enemies for higher waves
+              // Add bonus enemies for higher waves
             if (waveNumber >= 10) {
-                const bonusEnemies = Math.floor(waveNumber / 5);
+                let bonusEnemies = Math.floor(waveNumber / 5);
+                
+                // Apply difficulty multiplier to bonus enemies too
+                if (this.difficultyManager) {
+                    const multiplier = this.difficultyManager.getWaveSpawnMultiplier();
+                    bonusEnemies = Math.ceil(bonusEnemies * multiplier);
+                }
                 for (let i = 0; i < bonusEnemies; i++) {
                     // Higher chance of special enemies in bonus enemies for late waves
                     const rand = Math.random();
@@ -233,8 +251,13 @@ class EnemyManager {    constructor(arena) {
                     break;
             }
         }
+          const enemy = new Enemy(spawnX, spawnY, enemyType);
         
-        const enemy = new Enemy(spawnX, spawnY, enemyType);
+        // Apply difficulty modifiers if difficulty manager is available
+        if (this.difficultyManager) {
+            this.difficultyManager.applyEnemyModifiers(enemy);
+        }
+        
         this.enemies.push(enemy);
         this.totalSpawned++;
         this.enemiesSpawnedThisWave++;

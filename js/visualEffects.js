@@ -325,5 +325,24 @@ class VisualEffects {
         this.screenShake.timer = 0;
         this.screenShake.offsetX = 0;
         this.screenShake.offsetY = 0;
+    }    // Player healing visual effect
+    onPlayerHeal(playerX, playerY, healAmount = null) {
+        // Add healing number if heal amount is specified (no particles or screen shake)
+        if (healAmount !== null) {
+            const damageNumber = {
+                x: playerX + (Math.random() - 0.5) * 40,
+                y: playerY - 20,
+                text: `+${healAmount}`,
+                life: 1.0,
+                maxLife: 2.0,
+                color: { r: 0, g: 255, b: 100 }, // Green for healing
+                size: 18,
+                vx: (Math.random() - 0.5) * 50,
+                vy: -80 - Math.random() * 40
+            };
+            this.damageNumbers.push(damageNumber);
+        }
+        
+        console.log('💚 Player healing visual effect triggered (no particles/shake)');
     }
 }

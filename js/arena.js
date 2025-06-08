@@ -92,12 +92,10 @@ class Arena {
     // Get safe zone status for UI
     getSafeZoneStatus() {
         return {
-            inSafeZone: this.playerInSafeZone,
             available: this.safeZoneAvailable,
+            inSafeZone: this.playerInSafeZone,
             timeRemaining: this.safeZoneTimeRemaining,
-            cooldownRemaining: this.safeZoneCooldownRemaining,
-            maxTime: this.safeZoneMaxTime,
-            active: this.isSafeZoneActive()
+            cooldownRemaining: this.safeZoneCooldownRemaining
         };
     }
     
@@ -303,5 +301,14 @@ class Arena {
             centerY: centerY,
             centerExclusionRadius: safeRadius
         };
+    }
+    
+    // Reset safe zone when player dies
+    resetSafeZone() {
+        this.safeZoneAvailable = true;
+        this.safeZoneTimeRemaining = this.safeZoneMaxTime;
+        this.safeZoneCooldownRemaining = 0;
+        this.playerInSafeZone = false;
+        console.log('🛡️ Safe zone reset - full protection restored');
     }
 }

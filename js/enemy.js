@@ -77,26 +77,27 @@ class Enemy {
                 this.glowColor = '#ff3333';
                 this.points = 5;
         }
-    }    update(deltaTime, player, arena) {
+    }    update(deltaTime, player, arena, allEnemies = null) {
         if (!this.active) return;
         
         // Update type-specific behavior
         this.updateTypeBehavior(deltaTime, player);
-        
-        // Check if player is protected by safe zone
+          // Check if player is protected by safe zone
         const playerProtected = arena && arena.isSafeZoneActive();
-        
-        if (playerProtected) {
+        const safeZoneStatus = arena ? arena.getSafeZoneStatus() : null;
+          if (playerProtected) {
             // Player is in active safe zone - move aimlessly
-            this.moveAimlessly(deltaTime, arena);
+            this.moveAimlessly(deltaTime, arena, allEnemies);
         } else {
-            // Normal AI: move towards player but avoid safe zone
+            // Normal AI: move towards player
             this.targetX = player.x;
             this.targetY = player.y;
             
-            // Check if target is in safe zone and adjust if needed
-            if (arena && arena.isInSafeZone(this.targetX, this.targetY)) {
-                // If player is in safe zone, move to edge of safe zone instead
+            // Only avoid safe zone if it's available and player is in it
+            // During cooldown, enemies can pursue normally
+            if (arena && arena.isInSafeZone(this.targetX, this.targetY) && 
+                safeZoneStatus && safeZoneStatus.available) {
+                // If player is in available safe zone, move to edge instead
                 const center = arena.getCenter();
                 const dx = this.targetX - center.x;
                 const dy = this.targetY - center.y;
@@ -110,8 +111,7 @@ class Enemy {
                 }
             }
         }
-        
-        // Calculate direction to target
+          // Calculate direction to target
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -125,6 +125,13 @@ class Enemy {
             }
               this.velocity.x = (dx / distance) * currentSpeed;
             this.velocity.y = (dy / distance) * currentSpeed;
+            
+            // Apply collision avoidance if other enemies are provided
+            if (allEnemies && allEnemies.length > 1) {
+                const avoidance = this.calculateAvoidance(allEnemies);
+                this.velocity.x += avoidance.x;
+                this.velocity.y += avoidance.y;
+            }
         }
         
         // Calculate new position
@@ -168,9 +175,8 @@ class Enemy {
             }
         }
     }
-    
-    // Move aimlessly when player is protected in safe zone
-    moveAimlessly(deltaTime, arena) {
+      // Move aimlessly when player is protected in safe zone
+    moveAimlessly(deltaTime, arena, allEnemies = null) {
         // Initialize random target if we don't have one or reached current target
         if (!this.aimlessTarget || this.isNearTarget(this.aimlessTarget, 30)) {
             this.generateAimlessTarget(arena);
@@ -189,7 +195,15 @@ class Enemy {
             // Move at half speed when aimless
             const aimlessSpeed = this.speed * 0.5;
             this.velocity.x = (dx / distance) * aimlessSpeed;
-            this.velocity.y = (dy / distance) * aimlessSpeed;        }
+            this.velocity.y = (dy / distance) * aimlessSpeed;
+            
+            // Apply collision avoidance during aimless movement too
+            if (allEnemies && allEnemies.length > 1) {
+                const avoidance = this.calculateAvoidance(allEnemies);
+                this.velocity.x += avoidance.x * 0.5; // Reduced avoidance during aimless movement
+                this.velocity.y += avoidance.y * 0.5;
+            }
+        }
           // Calculate new position
         let newX = this.x + this.velocity.x * deltaTime;
         let newY = this.y + this.velocity.y * deltaTime;
@@ -571,5 +585,43 @@ class Enemy {
                 }
                 break;
         }
+    }
+      // Calculate collision avoidance with other enemies
+    calculateAvoidance(enemies) {
+        let avoidanceX = 0;
+        let avoidanceY = 0;
+        let nearbyCount = 0;
+        
+        const avoidanceRadius = this.radius * 3; // How close before they avoid each other
+        const avoidanceStrength = 150; // Increased strength for better separation
+        const maxNearbyEnemies = 5; // Limit for performance
+        
+        for (let other of enemies) {
+            if (other === this || !other.active) continue;
+            if (nearbyCount >= maxNearbyEnemies) break; // Performance limit
+            
+            const dx = this.x - other.x;
+            const dy = this.y - other.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < avoidanceRadius && distance > 0.1) { // Small epsilon to avoid division by zero
+                // Calculate avoidance force (stronger when closer)
+                const force = (avoidanceRadius - distance) / avoidanceRadius;
+                const normalizedDx = dx / distance;
+                const normalizedDy = dy / distance;
+                
+                avoidanceX += normalizedDx * force * avoidanceStrength;
+                avoidanceY += normalizedDy * force * avoidanceStrength;
+                nearbyCount++;
+            }
+        }
+        
+        // Average the avoidance if there are multiple nearby enemies
+        if (nearbyCount > 0) {
+            avoidanceX /= nearbyCount;
+            avoidanceY /= nearbyCount;
+        }
+        
+        return { x: avoidanceX, y: avoidanceY };
     }
 }
