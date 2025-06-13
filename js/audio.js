@@ -4,13 +4,13 @@
 class AudioManager {
     constructor() {
         // Initialize intro audio
-        this.introAudio = new Audio('assets/Loading Intro.mp3');
+        this.introAudio = new Audio('assets/Music/Loading Intro.mp3');
         this.introAudio.volume = 0.8;
         this.introAudio.loop = false; // Don't loop intro music
         this.introAudio.preload = 'auto';
         
         // Initialize in-game background music
-        this.gameAudio = new Audio('assets/futuristic-action-cinematic-electronic-loop-291807.mp3');
+        this.gameAudio = new Audio('assets/Music/futuristic-action-cinematic-electronic-loop-291807.mp3');
         this.gameAudio.volume = 0.6; // Slightly lower volume for background music
         this.gameAudio.loop = true; // Loop the background music
         this.gameAudio.preload = 'auto';

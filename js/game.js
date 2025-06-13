@@ -26,7 +26,7 @@ class Game {    constructor() {
         this.paused = true; // Start paused during splash screen
         
         // Survival time tracking
-        this.gameStartTime = 0;
+        this.gameStartTime = null;
         this.survivalTime = 0;
           // Game timing
         this.lastTime = 0;
@@ -185,17 +185,29 @@ class Game {    constructor() {
     }
 
     showDifficultySelection() {
+        // Only show difficulty selection if game hasn't started or is over
+        if (this.gameStarted && !this.gameOver) {
+            console.log('Cannot show difficulty selection during active gameplay');
+            return;
+        }
+        
+        // Reset game state
+        this.gameStarted = false;
+        this.paused = true;
+        
+        // Show the difficulty selection screen
         const difficultyScreen = document.getElementById('difficultyScreen');
         if (difficultyScreen) {
             difficultyScreen.style.display = 'flex';
             
-            // Set up difficulty selection event listeners
-            this.setupDifficultyEventListeners();
-        } else {
-            // Fallback: start with default difficulty if difficulty screen is missing
-            console.warn('Difficulty selection screen not found, starting with default difficulty');
-            this.start();
+            // Create difficulty options if they don't exist
+            if (!difficultyScreen.querySelector('.difficulty-option')) {
+                this.createDifficultyOptions();
+            }
         }
+        
+        // Set up event listeners for difficulty selection
+        this.setupDifficultyEventListeners();
     }
 
     setupDifficultyEventListeners() {
@@ -210,7 +222,26 @@ class Game {    constructor() {
     }
 
     selectDifficulty(difficulty) {
+        // Ignore difficulty selection if game is already in progress
+        if (this.gameStarted && !this.gameOver) {
+            console.log('Cannot change difficulty during active gameplay');
+            return;
+        }
+        
         console.log(`🎮 Player selected difficulty: ${difficulty}`);
+        
+        // Reset game state
+        this.score = 0;
+        this.kills = 0;
+        this.gameOver = false;
+        this.paused = false;
+        this.gameStartTime = 0;
+        this.survivalTime = 0;
+        
+        // Reset player to center
+        if (this.player) {
+            this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
+        }
         
         // Set the difficulty in the difficulty manager
         if (this.difficultyManager.setDifficulty(difficulty)) {
@@ -220,12 +251,16 @@ class Game {    constructor() {
             // Update enemy manager with new difficulty
             this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
             
+            // Reset arena
+            this.arena.resetSafeZone();
+            
             // Hide difficulty selection screen
             const difficultyScreen = document.getElementById('difficultyScreen');
             if (difficultyScreen) {
                 difficultyScreen.style.display = 'none';
             }
-              // Start the game
+            
+            // Start the game
             this.start();
         } else {
             console.error(`Failed to set difficulty: ${difficulty}`);
@@ -316,12 +351,20 @@ class Game {    constructor() {
         }
         
         // Calculate delta time in seconds
-        const deltaTime = (currentTime - this.lastTime) / 1000;
+        var deltaTime = (currentTime - this.lastTime) / 1000;
         this.lastTime = currentTime;
 
-        // Cap delta time to prevent huge jumps
-        const cappedDeltaTime = Math.min(deltaTime, 0.033); // Cap at ~30 FPS minimum
-        
+        // Cap delta time both minimum and maximum to prevent physics issues
+        var cappedDeltaTime = Math.min(Math.max(deltaTime, 0.001), 0.033); // Cap between 1ms and ~33ms
+
+        // Update survival time if game has started and not paused or game over
+        if (this.gameStarted && !this.paused && !this.gameOver) {
+            if (!this.gameStartTime) {
+                this.gameStartTime = currentTime;
+            }
+            this.survivalTime = Math.max(0, (currentTime - this.gameStartTime) / 1000);
+        }
+
         // Always handle input even when paused (for pause/unpause controls)
         this.handleGameInput();
         
@@ -331,33 +374,28 @@ class Game {    constructor() {
         }
         
         this.render();
-          // Update UI with proper deltaTime
+
+        // Update UI with current game data
         const gameData = {
             player: this.player,
             score: this.score,
             kills: this.kills,
+            survivalTime: this.survivalTime,
             enemyCount: this.enemyManager.getActiveEnemyCount(),
             enemyManager: this.enemyManager,
             upgradeSystem: this.upgradeSystem,
             gameOver: this.gameOver,
             paused: this.paused,
-
             arena: this.arena,
             enemies: this.enemyManager.enemies
         };
+        
         this.ui.update(deltaTime, gameData);
-          requestAnimationFrame((time) => this.gameLoop(time));
+        
+        requestAnimationFrame((time) => this.gameLoop(time));
     }    update(deltaTime) {
         // Don't update game if game over
         if (this.gameOver) return;
-
-        // Update survival time if game has started
-        if (this.gameStarted) {
-            if (this.gameStartTime === 0) {
-                this.gameStartTime = performance.now();
-            }
-            this.survivalTime = (performance.now() - this.gameStartTime) / 1000; // Convert to seconds
-        }
 
         // Update player and capture action events for visual effects
         const playerActionEvents = this.player.update(deltaTime, this.input, this.arena);
@@ -366,10 +404,10 @@ class Game {    constructor() {
         this.arena.update(deltaTime, this.player.x, this.player.y);
         
         // Trigger visual effects for player actions
-        if (playerActionEvents.dashActivated) {
+        if (playerActionEvents && playerActionEvents.dashActivated) {
             this.visualEffects.onDashUsed(this.player.x, this.player.y);
         }
-        if (playerActionEvents.overclockActivated) {
+        if (playerActionEvents && playerActionEvents.overclockActivated) {
             this.visualEffects.onOverclockActivated(this.player.x, this.player.y);
         }
         
@@ -414,6 +452,11 @@ class Game {    constructor() {
         // Check for wave completion to show upgrade menu
         this.checkForWaveCompletion();
     }render() {
+        // Reset all canvas settings at the start
+        this.ctx.globalAlpha = 1.0;
+        this.ctx.shadowBlur = 0;
+        this.ctx.shadowColor = 'transparent';
+        
         // Apply screen shake offset
         const shakeOffset = this.visualEffects.getScreenShakeOffset();
         this.ctx.save();
@@ -431,22 +474,35 @@ class Game {    constructor() {
         // Render arena
         this.arena.render(this.ctx);
         
+        // Reset alpha between major renders
+        this.ctx.globalAlpha = 1.0;
+        
         // Render enemies
         this.enemyManager.render(this.ctx);
+        
+        // Reset alpha between major renders
+        this.ctx.globalAlpha = 1.0;
         
         // Render player
         this.player.render(this.ctx);
         
+        // Reset alpha between major renders
+        this.ctx.globalAlpha = 1.0;
+        
         // Render visual effects (sparks, damage numbers, etc.)
         this.visualEffects.render(this.ctx);
+        
+        // Reset alpha between major renders
+        this.ctx.globalAlpha = 1.0;
         
         // Apply final Overclock overlay effects
         if (this.player.isOverclocked) {
             this.renderOverclockOverlay();
         }
         
-        // Restore canvas transform
+        // Restore canvas transform and ensure alpha is reset
         this.ctx.restore();
+        this.ctx.globalAlpha = 1.0;
     }    handleGameInput() {
         // Don't handle input if game hasn't started yet
         if (!this.gameStarted) {
@@ -500,14 +556,22 @@ class Game {    constructor() {
             }
             this.paused = !this.paused;
             this.wasManuallyPaused = this.paused; // Track manual pause state
+        }          // Restart game (only when game over or paused)
+        if (this.input.wasKeyPressed('KeyR') && (this.gameOver || this.paused)) {
+            if (this.paused && !this.gameOver) {
+                // Show confirmation for restart during pause
+                if (confirm('Are you sure you want to restart? Current progress will be lost.')) {
+                    this.restartGame();
+                } else {
+                    return; // Don't restart if user cancels
+                }
+            } else {
+                // Direct restart when game is over
+                this.restartGame();
+            }
         }
-          // Restart game
-        if (this.gameOver && this.input.isKeyPressed('KeyR')) {
-            this.restartGame();
-        }
-        
-        // Change difficulty when game over
-        if (this.gameOver && this.input.wasKeyPressed('KeyD')) {
+          // Change difficulty when game over (press B)
+        if (this.gameOver && this.input.wasKeyPressed('KeyB')) {
             this.changeDifficultyOnGameOver();
         }
     }    restartGame() {
@@ -533,9 +597,8 @@ class Game {    constructor() {
         this.kills = 0;
         this.gameOver = false;
         this.gameStarted = false; // Reset game started flag
-        
-        // Reset survival time tracking
-        this.gameStartTime = 0;
+          // Reset survival time tracking
+        this.gameStartTime = null;
         this.survivalTime = 0;
         
         // Show difficulty selection again
@@ -635,15 +698,16 @@ class Game {    constructor() {
     
     checkForWaveCompletion() {
         const waveState = this.enemyManager.getWaveState();
-          // Check if wave just completed and we haven't shown upgrade menu yet
+        
+        // Check if wave just completed and we haven't shown upgrade menu yet
         if (waveState === 'completed' && !this.upgradeSystem.shouldShowUpgradeMenu() && !this.paused) {
             const currentWave = this.enemyManager.getCurrentWave();
             
             // Handle wave completion healing before showing upgrade menu
             this.handleWaveCompletionHealing(currentWave);
             
-            // Show upgrade menu after every wave (except first preparation)
-            if (currentWave > 1) {
+            // Show upgrade menu at wave 2, wave 5, and then every 5 waves
+            if (currentWave === 2 || (currentWave >= 5 && (currentWave - 5) % 5 === 0)) {
                 this.showUpgradeMenu();
             }
         }

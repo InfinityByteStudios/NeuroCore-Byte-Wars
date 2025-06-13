@@ -49,9 +49,8 @@ function testAudioSystem() {
 function testAudioFiles() {
     console.log('\n🔍 Testing audio file accessibility...');
     
-    const audioFiles = [
-        'assets/Loading Intro.mp3',
-        'assets/futuristic-action-cinematic-electronic-loop-291807.mp3'
+    const audioFiles = [        'assets/Music/Loading Intro.mp3',
+        'assets/Music/futuristic-action-cinematic-electronic-loop-291807.mp3'
     ];
     
     audioFiles.forEach((file, index) => {

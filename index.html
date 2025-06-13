@@ -2,15 +2,14 @@
 <html lang="en">
 <head>    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroCore: Byte Wars</title>
-    <link rel="icon" type="image/png" href="assets/NeuroCore Byte Wars Logo.png">
-    <link rel="shortcut icon" type="image/png" href="assets/NeuroCore Byte Wars Logo.png">
+    <title>NeuroCore: Byte Wars</title>    <link rel="icon" type="image/png" href="assets/Logos/NeuroCore Byte Wars Logo.png">
+    <link rel="shortcut icon" type="image/png" href="assets/Logos/NeuroCore Byte Wars Logo.png">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>    <!-- Studio Splash Screen -->
     <div id="studioSplash" class="splash-screen active">
         <div class="splash-content">
-            <img src="assets/InfinityByte Studios 1920×1080.png" alt="InfinityByte Studio" class="splash-logo">
+            <img src="assets/Logos/InfinityByte Studios 1920×1080.png" alt="InfinityByte Studio" class="splash-logo">
             <div class="splash-subtitle">Presents</div>
             <div class="splash-loading">
                 <div class="loading-squares">
@@ -23,7 +22,7 @@
     </div>    <!-- Game Logo Splash Screen -->
     <div id="gameSplash" class="splash-screen">
         <div class="splash-content">
-            <img src="assets/NeuroCore Byte Wars Logo.png" alt="NeuroCore Byte Wars" class="splash-logo game-logo">
+            <img src="assets/Logos/NeuroCore Byte Wars Logo.png" alt="NeuroCore Byte Wars" class="splash-logo game-logo">
             <div class="splash-loading">
                 <div class="loading-squares">
                     <div class="loading-square"></div>
@@ -156,7 +155,7 @@
                             <div class="changelog-item">• Complete difficulty system with 4 tiers (Easy/Medium/Hard/Extreme)</div>
                             <div class="changelog-item">• Difficulty selection screen with detailed stats and descriptions</div>
                             <div class="changelog-item">• Difficulty-based healing system with visual effects</div>
-                            <div class="changelog-item">• Change difficulty from game over screen with 'D' key</div>
+                            <div class="changelog-item">• Change difficulty from game over screen with 'B' key</div>
                             <div class="changelog-item">• Enhanced visual healing effects with green sparks and numbers</div>
                             <div class="changelog-item">• Professional intro animation with studio splash screen</div>
                         </div>
@@ -238,8 +237,8 @@
                             <div class="help-item">• **H** - Toggle Help System (this menu)</div>
                             <div class="help-item">• **C** - Toggle Changelog</div>
                             <div class="help-item">• **ESC** - Close Settings Menu</div>
-                            <div class="help-item">• **R** - Restart Game (when game over)</div>
-                            <div class="help-item">• **D** - Change Difficulty (when game over)</div>
+                            <div class="help-item">• **R** - Restart Game (during pause or game over)</div>
+                            <div class="help-item">• **B** - Change Difficulty (when game over)</div>
                         </div>
 
                         <div class="help-section">
@@ -283,9 +282,9 @@
             </div>
               <!-- Pause Overlay -->            <div class="pause-overlay hidden" id="pauseOverlay">
                 <div class="pause-panel">
-                    <div class="pause-title">◤ GAME PAUSED ◥</div>
-                    <div class="pause-instructions">
+                    <div class="pause-title">◤ GAME PAUSED ◥</div>                    <div class="pause-instructions">
                         <div class="pause-instruction">Press P to Resume</div>
+                        <div class="pause-instruction">Press R to Restart Game</div>
                         <div class="pause-instruction">Press H for Help System</div>
                         <div class="pause-instruction">Press C for Changelog</div>
                     </div>
@@ -367,7 +366,7 @@
             <div class="game-over-stats" id="finalKills">Enemies Eliminated: 0</div>
             <div class="game-over-instructions">
                 <div class="game-over-instruction">Press R to restart neural systems</div>
-                <div class="game-over-instruction">Press D to change difficulty</div>
+                <div class="game-over-instruction">Press B to change difficulty</div>
             </div>
         </div>
 

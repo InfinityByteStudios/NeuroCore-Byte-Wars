@@ -1,12 +1,33 @@
-class Player {
-    constructor(x, y) {        this.x = x;
+class Player {    constructor(x, y) {        this.x = x;
         this.y = y;
         this.radius = 15;
-        this.speed = 280; // pixels per second (increased for even larger arena)
+        
+        // Speed properties
+        this.baseSpeed = 280; // Base speed in pixels per second
+        this.speedMultiplier = 1.0; // Adjusted by difficulty
+        this.speed = this.baseSpeed; // Current speed (will be modified by difficulty)
         
         // Visual properties
         this.color = '#00ffff';
         this.aimDirection = 0; // angle in radians
+        
+        // Sprite properties
+        this.spriteLoaded = false;
+        this.spriteSize = 65; // Size to render the sprite (diameter)
+        this.sprite = new Image();
+
+        this.sprite.onload = () => {
+            this.spriteLoaded = true;
+            console.log('✅ Player sprite loaded successfully');
+        };
+
+        this.sprite.onerror = () => {
+            console.error('❌ Failed to load player sprite');
+            this.spriteLoaded = false;
+        };
+
+        // Set the source after setting up event handlers
+        this.sprite.src = 'assets/Sprites/sprite_0.png';
         
         // Movement smoothing
         this.velocity = { x: 0, y: 0 };
@@ -23,10 +44,10 @@ class Player {
         this.invulnerabilityTimer = 0;
         this.invulnerabilityDuration = 1.0; // seconds
         
-        // Visual effects
+        // Visual effects properties
         this.flashTimer = 0;
         this.isFlashing = false;
-        this.damageColor = '#ff0000';          // Dash system
+        this.damageColor = 'rgba(255, 0, 0, 0.5)'; // Semi-transparent red for damage          // Dash system
         this.dashSpeed = 840; // pixels per second during dash (increased for even larger arena)
         this.dashDuration = 0.2; // seconds
         this.dashCooldown = 2.0; // seconds between dashes
@@ -61,29 +82,33 @@ class Player {
         this.glitchIntensity = 0.5; // How much controls are scrambled (0-1)
         this.glitchVisualTimer = 0;
     }    update(deltaTime, input, arena) {
+        // Track old position for continuous collision detection during dash
+        const oldX = this.x;
+        const oldY = this.y;
+        
         // Track action events for visual effects
         const actionEvents = {
             dashActivated: false,
             overclockActivated: false
         };
         
-        // Update Overclock system
-        actionEvents.overclockActivated = this.updateOverclock(deltaTime, input);
-        
-        // Update dash cooldown (with Overclock bonus)
-        const dashCooldownRate = this.isOverclocked ? this.overclockMultipliers.dashCooldown : 1.0;
+        // Update dash cooldown
         if (this.dashCooldownTimer > 0) {
-            this.dashCooldownTimer -= deltaTime * (1 / dashCooldownRate);
+            this.dashCooldownTimer -= deltaTime;
         }
-        
-        // Handle dash input (Space key)
-        if (input.isKeyPressed('Space') && this.canDash()) {
-            actionEvents.dashActivated = this.startDash(input);
+          // Handle dash input
+        if (input.wasKeyPressed('Space') && this.canDash()) {
+            if (this.startDash(input)) {
+                actionEvents.dashActivated = true;
+            }
         }
         
         // Update dash state
-        this.updateDash(deltaTime);        // Get movement input (disabled during dash)
+        this.updateDash(deltaTime);
+        
+        // Update movement with glitch effect
         if (!this.isDashing) {
+            // Get movement input (disabled during dash)
             const originalMovement = input.getMovementVector();
             const movement = this.getGlitchedMovement(originalMovement);
             
@@ -104,46 +129,42 @@ class Player {
                 this.velocity.x = (this.velocity.x / currentSpeed) * maxSpeed;
                 this.velocity.y = (this.velocity.y / currentSpeed) * maxSpeed;
             }
+        } else {
+            // During dash, move in small steps to prevent tunneling through enemies
+            const steps = Math.ceil(Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y) * deltaTime / this.radius);
+            const stepDelta = deltaTime / steps;
+            
+            for (let i = 0; i < steps; i++) {
+                this.x += this.velocity.x * stepDelta;
+                this.y += this.velocity.y * stepDelta;
+                this.clampToArena(arena);
+            }
         }
         
         // Update position
         this.x += this.velocity.x * deltaTime;
         this.y += this.velocity.y * deltaTime;
-        
-        // Keep player in arena bounds
-        if (arena) {
-            const margin = this.radius;
-            this.x = Math.max(arena.borderThickness + margin, 
-                             Math.min(arena.width - arena.borderThickness - margin, this.x));
-            this.y = Math.max(arena.borderThickness + margin, 
-                             Math.min(arena.height - arena.borderThickness - margin, this.y));
-        } else {
-            // Fallback to canvas bounds
-            const canvas = document.getElementById('gameCanvas');
-            this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-            this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-        }
-        
-        // Update dash trail
-        this.updateDashTrail();
+        this.clampToArena(arena);
         
         // Update aim direction based on mouse position
         this.aimDirection = Math.atan2(input.mouse.y - this.y, input.mouse.x - this.x);
-          // Handle shooting
+        
+        // Handle shooting
         if (input.mouse.isDown) {
             this.shoot();
         }
-        
-        // Update bullets
+          // Update other systems
         this.updateBullets(deltaTime);
+        this.updateOverclock(deltaTime, input);
         
-        // Update invulnerability
+        // Update visual effects timers
         if (this.invulnerable) {
             this.invulnerabilityTimer -= deltaTime;
             if (this.invulnerabilityTimer <= 0) {
                 this.invulnerable = false;
             }
-        }          // Update flash timer
+        }
+        
         if (this.isFlashing) {
             this.flashTimer -= deltaTime;
             if (this.flashTimer <= 0) {
@@ -154,7 +175,17 @@ class Player {
         // Update glitch effect
         this.updateGlitchEffect(deltaTime);
         
-        return actionEvents; // Return action events for visual effects
+        return actionEvents;
+    }
+    
+    clampToArena(arena) {
+        if (!arena) return;
+        
+        const margin = this.radius;
+        this.x = Math.max(arena.borderThickness + margin, 
+                         Math.min(arena.width - arena.borderThickness - margin, this.x));
+        this.y = Math.max(arena.borderThickness + margin, 
+                         Math.min(arena.height - arena.borderThickness - margin, this.y));
     }
     
     // Dash system methods
@@ -182,11 +213,17 @@ class Player {
             this.dashDirection.x /= magnitude;
             this.dashDirection.y /= magnitude;
         }
-          // Start dash
+        
+        // Start dash
         this.isDashing = true;
         this.dashTimer = this.dashDuration;
         this.dashCooldownTimer = this.dashCooldown;
-          // Set dash velocity
+        
+        // Add brief invulnerability during dash
+        this.invulnerable = true;
+        this.invulnerabilityTimer = this.dashDuration + 0.1; // Add 0.1s buffer after dash
+        
+        // Set dash velocity
         this.velocity.x = this.dashDirection.x * this.dashSpeed;
         this.velocity.y = this.dashDirection.y * this.dashSpeed;
         
@@ -242,9 +279,8 @@ class Player {
                 this.deactivateOverclock();
             }
         }
-        
-        // Manual activation with Q key (if charged)
-        if (input.isKeyPressed('KeyQ') && this.canActivateOverclock()) {
+          // Manual activation with Q key (if charged)
+        if (input.wasKeyPressed('KeyQ') && this.canActivateOverclock()) {
             return this.activateOverclock(); // Return the activation result
         }
         
@@ -477,18 +513,23 @@ class Player {
         let glowColor = '#00ffff';
         let glowIntensity = 0;
         
+        // Set different colors and glows based on player state
         if (this.isFlashing) {
             currentColor = this.damageColor;
+            glowColor = '#ff0000';
+            glowIntensity = 15;
         } else if (this.invulnerable) {
-            // Flicker effect during invulnerability
+            // Flicker effect during invulnerability with semi-transparency
             const flickerRate = 10; // flickers per second
             const flickerTime = Date.now() / 1000;
             if (Math.floor(flickerTime * flickerRate) % 2 === 0) {
-                currentColor = '#ffffff';
+                currentColor = 'rgba(255, 255, 255, 0.3)';
+                glowColor = '#ffffff';
+                glowIntensity = 10;
             }
         } else if (this.isOverclocked) {
             // Special Overclock color and glow
-            currentColor = '#ff00ff'; // Bright magenta
+            currentColor = 'rgba(255, 0, 255, 0.4)'; // Semi-transparent magenta
             glowColor = '#ff00ff';
             glowIntensity = 25;
             
@@ -496,70 +537,88 @@ class Player {
             const pulseRate = 3; // pulses per second
             const pulseTime = Date.now() / 1000;
             const pulseFactor = 0.5 + 0.5 * Math.sin(pulseTime * Math.PI * 2 * pulseRate);
-            glowIntensity = 15 + 15 * pulseFactor;        } else if (this.isGlitched) {
+            glowIntensity = 15 + 15 * pulseFactor;
+        } else if (this.isGlitched) {
             // Glitch effect color with erratic flickering
             const glitchColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
             const glitchIndex = Math.floor(this.glitchVisualTimer * 20) % glitchColors.length;
-            currentColor = glitchColors[glitchIndex];
-            glowColor = currentColor;
+            currentColor = glitchColors[glitchIndex].replace('#', 'rgba(').replace(')', ', 0.4)');
+            glowColor = glitchColors[glitchIndex];
             glowIntensity = 15 + Math.random() * 10;
         } else if (this.isDashing) {
             // Special dash color with glow
-            currentColor = '#ffffff';
+            currentColor = 'rgba(0, 255, 255, 0.4)'; // Semi-transparent cyan
             glowColor = '#00ffff';
             glowIntensity = 20;
         }
-        
-        // Apply glow effect
-        if (glowIntensity > 0) {
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = glowIntensity;
+
+        if (this.spriteLoaded) {
+            // Create a temporary canvas to handle the sprite coloring
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.spriteSize;
+            tempCanvas.height = this.spriteSize;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // Draw the sprite on the temp canvas
+            tempCtx.drawImage(
+                this.sprite,
+                0,
+                0,
+                this.spriteSize,
+                this.spriteSize
+            );
+
+            // If we need to apply a color overlay
+            if (currentColor !== this.color) {
+                // Use source-in to only color the non-transparent pixels
+                tempCtx.globalCompositeOperation = 'source-in';
+                tempCtx.fillStyle = currentColor;
+                tempCtx.fillRect(0, 0, this.spriteSize, this.spriteSize);
+            }
+
+            // Apply glow effect if needed
+            if (glowIntensity > 0) {
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = glowIntensity;
+            }
+
+            // Save context for rotation
+            ctx.save();
+            
+            // Move to player position and rotate to face aim direction
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.aimDirection + Math.PI / 2); // Add PI/2 to align sprite properly
+
+            // Draw the processed sprite
+            ctx.drawImage(
+                tempCanvas,
+                -this.spriteSize / 2,
+                -this.spriteSize / 2,
+                this.spriteSize,
+                this.spriteSize
+            );
+
+            // Restore context
+            ctx.restore();
+        } else {
+            // Fallback to circle if sprite isn't loaded
+            ctx.fillStyle = currentColor;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
         }
-          // Draw player body
-        ctx.fillStyle = currentColor;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
+
         // Draw glitch effects
         if (this.isGlitched) {
             this.renderGlitchEffects(ctx);
         }
-        
+
         // Reset shadow
         ctx.shadowBlur = 0;
-        
-        // Draw aim indicator (enhanced during Overclock)
-        const aimLength = this.isOverclocked ? 35 : 25;
-        const aimEndX = this.x + Math.cos(this.aimDirection) * aimLength;
-        const aimEndY = this.y + Math.sin(this.aimDirection) * aimLength;
-        
-        let aimColor = '#ffffff';
-        if (this.isOverclocked) {
-            aimColor = '#ff00ff';
-            ctx.shadowColor = '#ff00ff';
-            ctx.shadowBlur = 8;
-        }
-        
-        ctx.strokeStyle = aimColor;
-        ctx.lineWidth = this.isOverclocked ? 3 : 2;
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y);
-        ctx.lineTo(aimEndX, aimEndY);
-        ctx.stroke();
-        
-        // Draw a small dot at the aim end
-        ctx.fillStyle = aimColor;
-        ctx.beginPath();
-        ctx.arc(aimEndX, aimEndY, this.isOverclocked ? 4 : 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Reset shadow
-        ctx.shadowBlur = 0;
-        
-        // Render bullets (pass Overclock state for enhanced visuals)
+
+        // Render bullets
         for (let bullet of this.bullets) {
-            bullet.render(ctx, this.isOverclocked);
+            bullet.render(ctx);
         }
     }
     
@@ -686,5 +745,11 @@ class Player {
                 ctx.stroke();
             }
         }
+    }
+    
+    setSpeedMultiplier(multiplier) {
+        this.speedMultiplier = multiplier;
+        this.speed = this.baseSpeed * this.speedMultiplier;
+        console.log(`🏃 Player speed adjusted: ${Math.round(this.speed)} (${Math.round(this.speedMultiplier * 100)}% of base)`);
     }
 }

@@ -9,7 +9,8 @@ class DifficultyManager {
                 name: 'Easy',
                 emoji: '🟢',
                 playerHealth: 150,
-                enemySpeedMultiplier: 0.7,     // 30% slower
+                playerSpeedMultiplier: 1.0,    // 100% normal speed - full control
+                enemySpeedMultiplier: 1.0,     // Normal speed
                 enemyHealthMultiplier: 0.8,    // 20% less health
                 enemyDamageMultiplier: 0.7,    // 30% less damage
                 overclockChargeMultiplier: 1.5, // 50% faster charge
@@ -23,6 +24,7 @@ class DifficultyManager {
                 name: 'Medium',
                 emoji: '🟡',
                 playerHealth: 100,
+                playerSpeedMultiplier: 0.95,   // 95% speed - slightly reduced mobility
                 enemySpeedMultiplier: 1.0,     // Normal speed
                 enemyHealthMultiplier: 1.0,    // Normal health
                 enemyDamageMultiplier: 1.0,    // Normal damage
@@ -37,8 +39,9 @@ class DifficultyManager {
                 name: 'Hard',
                 emoji: '🔴',
                 playerHealth: 100,
-                enemySpeedMultiplier: 1.3,     // 30% faster
-                enemyHealthMultiplier: 1.4,    // 40% more health
+                playerSpeedMultiplier: 0.90,   // 90% speed - requires better positioning
+                enemySpeedMultiplier: 1.0,     // Normal speed
+                enemyHealthMultiplier: 1.2,    // 20% more health
                 enemyDamageMultiplier: 1.2,    // 20% more damage
                 overclockChargeMultiplier: 0.7, // 30% slower charge
                 waveSpawnMultiplier: 1.4,      // 40% more enemies
@@ -50,9 +53,10 @@ class DifficultyManager {
             extreme: {
                 name: 'Extreme',
                 emoji: '☠️',
-                playerHealth: 100,
-                enemySpeedMultiplier: 1.6,     // 60% faster
-                enemyHealthMultiplier: 1.8,    // 80% more health
+                playerHealth: 80,
+                playerSpeedMultiplier: 0.80,   // 80% speed - heavy, requires mastery
+                enemySpeedMultiplier: 1.0,     // Normal speed
+                enemyHealthMultiplier: 1.5,    // 50% more health
                 enemyDamageMultiplier: 1.5,    // 50% more damage
                 overclockChargeMultiplier: 0.5, // 50% slower charge
                 waveSpawnMultiplier: 1.8,      // 80% more enemies
@@ -143,23 +147,21 @@ class DifficultyManager {
         player.baseDashCooldown = player.baseDashCooldown * config.dashCooldownMultiplier;
         player.dashCooldown = player.baseDashCooldown;
         
-        console.log(`🔧 Player modifiers applied for ${config.name} difficulty:`, {
+        // Apply player speed multiplier
+        player.setSpeedMultiplier(config.playerSpeedMultiplier);
+        
+        console.log(`🎮 Applied ${config.name} difficulty modifiers to player:`, {
             health: player.health,
-            maxHealth: player.maxHealth,
-            overclockCharge: player.overclockChargePerKill,
-            dashCooldown: player.dashCooldown
+            speed: Math.round(player.speed),
+            speedMultiplier: `${Math.round(config.playerSpeedMultiplier * 100)}%`,
+            dashCooldown: player.dashCooldown.toFixed(1),
+            overclockCharge: player.overclockChargePerKill
         });
     }
     
     // Apply difficulty modifiers to enemy stats
     applyEnemyModifiers(enemy) {
         const config = this.getCurrentDifficulty();
-        
-        // Apply speed multiplier
-        enemy.speed = Math.round(enemy.speed * config.enemySpeedMultiplier);
-        if (enemy.dashSpeed) {
-            enemy.dashSpeed = Math.round(enemy.dashSpeed * config.enemySpeedMultiplier);
-        }
         
         // Apply health multiplier
         enemy.health = Math.round(enemy.health * config.enemyHealthMultiplier);

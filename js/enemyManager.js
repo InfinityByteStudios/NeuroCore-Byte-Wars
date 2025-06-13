@@ -22,9 +22,24 @@ class EnemyManager {    constructor(arena, difficultyManager = null) {
         this.visualEffects = null;
         
         // Initialize first wave
-        this.setupWave(this.currentWave);
+        this.reset();
         
         console.log('🎯 Enemy Manager initialized with difficulty support');
+    }reset() {
+        // Clear all enemies
+        this.enemies = [];
+        
+        // Reset wave state
+        this.currentWave = 1;
+        this.waveState = 'preparing';
+        this.waveTimer = 0;
+        this.totalSpawned = 0;
+        this.enemiesSpawnedThisWave = 0;
+        
+        // Setup first wave
+        this.setupWave(this.currentWave);
+        
+        console.log('🔄 Enemy Manager reset');
     }update(deltaTime, player) {
         this.waveTimer += deltaTime;
         

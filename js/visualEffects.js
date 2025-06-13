@@ -32,8 +32,15 @@ class VisualEffects {
     }
     
     render(ctx) {
+        // Reset alpha at start
+        ctx.globalAlpha = 1.0;
+        
+        // Render effects
         this.renderHitSparks(ctx);
+        ctx.globalAlpha = 1.0; // Reset between effects
+        
         this.renderDamageNumbers(ctx);
+        ctx.globalAlpha = 1.0; // Reset after all effects
     }
     
     // Screen Shake System
@@ -122,6 +129,9 @@ class VisualEffects {
     }
     
     renderHitSparks(ctx) {
+        // Reset at start
+        ctx.globalAlpha = 1.0;
+        
         for (const spark of this.hitSparks) {
             const alpha = spark.life / spark.maxLife;
             const size = spark.size * alpha;
@@ -136,6 +146,7 @@ class VisualEffects {
             ctx.fill();
         }
         
+        // Reset after rendering
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 0;
     }
@@ -183,6 +194,9 @@ class VisualEffects {
     }
     
     renderDamageNumbers(ctx) {
+        // Reset at start
+        ctx.globalAlpha = 1.0;
+        
         for (const damageNum of this.damageNumbers) {
             const alpha = Math.min(1, damageNum.life / damageNum.maxLife);
             const progress = 1 - (damageNum.life / damageNum.maxLife);
@@ -213,6 +227,7 @@ class VisualEffects {
             ctx.fillText(damageNum.damage.toString(), damageNum.x, damageNum.y);
         }
         
+        // Reset after rendering
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 0;
     }

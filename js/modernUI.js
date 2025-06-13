@@ -273,14 +273,15 @@ class ModernUI {    constructor() {
             }
             statusDiv.className = 'safezone-status';
         }
-    }
-      updateStats(score, kills, survivalTime) {
+    }      updateStats(score, kills, survivalTime = 0) {
         this.elements.scoreDisplay.textContent = `SCORE: ${score}`;
         this.elements.killsDisplay.textContent = `KILLS: ${kills}`;
         
         // Format survival time as MM:SS
-        const minutes = Math.floor(survivalTime / 60);
-        const seconds = Math.floor(survivalTime % 60);
+        // Ensure we have a valid number
+        const validTime = Number.isFinite(survivalTime) ? survivalTime : 0;
+        const minutes = Math.floor(validTime / 60);
+        const seconds = Math.floor(validTime % 60);
         const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         this.elements.survivalTimeDisplay.textContent = `TIME: ${timeString}`;
     }
