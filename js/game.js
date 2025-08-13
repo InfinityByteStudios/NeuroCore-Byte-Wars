@@ -6,20 +6,26 @@ class Game {    constructor() {
         this.audioManager = new AudioManager();
         
         // Set up dynamic canvas resizing
-        this.setupCanvasResize();
-          // Initialize game systems
+        this.setupCanvasResize();          // Initialize game systems
         this.arena = new Arena(this.canvas.width, this.canvas.height);
         this.input = new InputManager();
         this.difficultyManager = new DifficultyManager(); // Add difficulty system
-          this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
+          this.upgradeSystem = new UpgradeSystem(); // Add upgrade system
+        this.shopSystem = new ShopSystem(); // Add shop system
+        this.healthDropManager = new HealthDropManager(); // Add health drop system
+        
+          this.player = new Player(this.canvas.width / 2, this.canvas.height / 2, this.shopSystem);
+          // Set player reference in shop system
+        this.shopSystem.setPlayer(this.player);
+        
+        // Ensure player loads the correct skin after shop system is set up
+        this.player.updateSkin();
         
         // Apply difficulty modifiers to player
         this.difficultyManager.applyPlayerModifiers(this.player);
-        
-        this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
-        this.upgradeSystem = new UpgradeSystem(); // Add upgrade system
+          this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
         this.visualEffects = new VisualEffects(); // Visual effects system
-        this.ui = new ModernUI(); // Use the new modern UI system        // Game state
+        this.ui = new ModernUI(); // Use the new modern UI system// Game state
         this.score = 0;
         this.kills = 0;
         this.gameOver = false;
@@ -31,8 +37,7 @@ class Game {    constructor() {
           // Game timing
         this.lastTime = 0;
         this.running = true;
-        this.gameStarted = false; // Track if game has started
-          // Set up upgrade system event listener
+        this.gameStarted = false; // Track if game has started        // Set up upgrade system event listener
         this.setupUpgradeEventListener();
         
         // Set up auto-pause when user switches tabs
@@ -236,11 +241,10 @@ class Game {    constructor() {
         this.gameOver = false;
         this.paused = false;
         this.gameStartTime = 0;
-        this.survivalTime = 0;
-        
-        // Reset player to center
+        this.survivalTime = 0;        // Reset player to center
         if (this.player) {
-            this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
+            this.player = new Player(this.canvas.width / 2, this.canvas.height / 2, this.shopSystem);
+            this.shopSystem.setPlayer(this.player);
         }
         
         // Set the difficulty in the difficulty manager
@@ -373,9 +377,7 @@ class Game {    constructor() {
             this.update(cappedDeltaTime);
         }
         
-        this.render();
-
-        // Update UI with current game data
+        this.render();        // Update UI with current game data
         const gameData = {
             player: this.player,
             score: this.score,
@@ -387,7 +389,8 @@ class Game {    constructor() {
             gameOver: this.gameOver,
             paused: this.paused,
             arena: this.arena,
-            enemies: this.enemyManager.enemies
+            enemies: this.enemyManager.enemies,
+            shopSystem: this.shopSystem
         };
         
         this.ui.update(deltaTime, gameData);
@@ -412,18 +415,31 @@ class Game {    constructor() {
         }
         
         // Update enemies
-        this.enemyManager.update(deltaTime, this.player);
-          // Update visual effects
+        this.enemyManager.update(deltaTime, this.player);        // Update visual effects
         this.visualEffects.update(deltaTime);
         
-        // Handle difficulty-based healing
-        this.handleDifficultyHealing(deltaTime);
+        // Update health drops
+        this.healthDropManager.update(deltaTime);
         
-        // Check bullet-enemy collisions
+        // Handle difficulty-based healing
+        this.handleDifficultyHealing(deltaTime);        // Check bullet-enemy collisions
         const collisionResult = this.enemyManager.checkBulletCollisions(this.player.bullets, this.visualEffects);
         if (collisionResult.points > 0) {
             this.score += collisionResult.points;
             this.kills += collisionResult.kills;
+              // Spawn health drops for killed enemies (Extreme difficulty only)
+            if (collisionResult.kills > 0) {
+                for (const hitInfo of collisionResult.hits) {
+                    if (hitInfo.wasKilled) {
+                        this.healthDropManager.trySpawnHealthDrop(hitInfo.x, hitInfo.y, this.difficultyManager);
+                    }
+                }
+            }
+            
+            // Add ByteCoins based on enemy hits (per hit, not per kill)
+            if (collisionResult.hits && collisionResult.hits.length > 0) {
+                this.shopSystem.addByteCoinReward(collisionResult.hits);
+            }
             
             // Call player onKill method for each kill (to charge Overclock)
             for (let i = 0; i < collisionResult.kills; i++) {
@@ -433,7 +449,7 @@ class Game {    constructor() {
             // Trigger UI flash effects for visual feedback
             this.ui.flashScore();
             this.ui.flashKill();
-        }        // Check player-enemy collisions
+        }// Check player-enemy collisions
         const hitEnemy = this.enemyManager.checkPlayerCollisions(this.player, this.arena);
         if (hitEnemy) {
             // Get enemy-specific damage from difficulty manager
@@ -446,7 +462,14 @@ class Game {    constructor() {
                 this.arena.resetSafeZone();
                 this.gameOver = true;
                 console.log('Game Over!');
-            }
+            }        }
+        
+        // Check health drop collisions
+        const healAmount = this.healthDropManager.checkCollisions(this.player);
+        if (healAmount > 0) {
+            this.player.heal(healAmount);
+            this.visualEffects.onPlayerHeal(this.player.x, this.player.y, healAmount);
+            console.log(`💚 Collected health drop: +${healAmount} HP`);
         }
         
         // Check for wave completion to show upgrade menu
@@ -488,9 +511,14 @@ class Game {    constructor() {
         
         // Reset alpha between major renders
         this.ctx.globalAlpha = 1.0;
-        
-        // Render visual effects (sparks, damage numbers, etc.)
+          // Render visual effects (sparks, damage numbers, etc.)
         this.visualEffects.render(this.ctx);
+        
+        // Reset alpha between major renders
+        this.ctx.globalAlpha = 1.0;
+        
+        // Render health drops
+        this.healthDropManager.render(this.ctx);
         
         // Reset alpha between major renders
         this.ctx.globalAlpha = 1.0;
@@ -556,7 +584,19 @@ class Game {    constructor() {
             }
             this.paused = !this.paused;
             this.wasManuallyPaused = this.paused; // Track manual pause state
-        }          // Restart game (only when game over or paused)
+        }          // Toggle shop with M key (only when game is active and not paused by other systems)
+        if (this.input.wasKeyPressed('KeyM') && !this.gameOver && !this.ui.helpVisible && !this.ui.changelogVisible) {
+            if (this.shopSystem.isShopOpen) {
+                this.shopSystem.closeShop();
+                this.paused = false;
+                this.wasManuallyPaused = false;
+            } else {
+                this.shopSystem.openShop();
+                this.paused = true;
+                this.wasManuallyPaused = true;
+            }
+        }
+          // Restart game (only when game over or paused)
         if (this.input.wasKeyPressed('KeyR') && (this.gameOver || this.paused)) {
             if (this.paused && !this.gameOver) {
                 // Show confirmation for restart during pause
@@ -569,26 +609,26 @@ class Game {    constructor() {
                 // Direct restart when game is over
                 this.restartGame();
             }
-        }
-          // Change difficulty when game over (press B)
-        if (this.gameOver && this.input.wasKeyPressed('KeyB')) {
+        }        // Change difficulty when game over (press TAB)
+        if (this.gameOver && this.input.wasKeyPressed('Tab')) {
             this.changeDifficultyOnGameOver();
         }
     }    restartGame() {
         // Reset audio using AudioManager
-        this.audioManager.reset();
-        
-        // Reset player
-        this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
+        this.audioManager.reset();        // Reset player
+        this.player = new Player(this.canvas.width / 2, this.canvas.height / 2, this.shopSystem);
+        this.shopSystem.setPlayer(this.player);
         
         // Reset enemy manager
         this.enemyManager = new EnemyManager(this.arena, this.difficultyManager);
         
         // Reset safe zone
         this.arena.resetSafeZone();
-        
-        // Clear visual effects
+          // Clear visual effects
         this.visualEffects.clear();
+        
+        // Clear health drops
+        this.healthDropManager.clear();
         
         // Reset upgrade system
         this.upgradeSystem.reset();
@@ -733,8 +773,7 @@ class Game {    constructor() {
     setupAutoFocusPause() {
         // Track if the game was manually paused before losing focus
         this.wasManuallyPaused = false;
-        
-        // Pause game when window loses focus (user switches tabs)
+          // Pause game when window loses focus (user switches tabs)
         window.addEventListener('blur', () => {
             // Only auto-pause if the game has started and is currently running
             if (this.gameStarted && !this.gameOver && !this.paused) {
@@ -744,6 +783,7 @@ class Game {    constructor() {
             } else if (this.gameStarted && !this.gameOver && this.paused) {
                 // Game was already paused, remember it was manual
                 this.wasManuallyPaused = true;
+                console.log('🔄 Game was already paused when focus lost');
             }
         });
           // Resume game when window regains focus (user returns to tab)
@@ -772,9 +812,7 @@ class Game {    constructor() {
                 }
             }
         }
-    }
-
-    handleWaveCompletionHealing(currentWave) {
+    }    handleWaveCompletionHealing(currentWave) {
         // Check if player should heal after wave completion
         if (this.difficultyManager.shouldHealPlayer(currentWave, false)) {
             const oldHealth = this.player.health;
@@ -784,10 +822,13 @@ class Game {    constructor() {
             let healAmount = 0;
             
             switch (config.healingType) {
-                case 'after_wave':
+                case 'after_each_wave':
                     healAmount = Math.ceil(this.player.maxHealth * 0.25); // 25% of max health
                     break;
-                case 'every_3_waves':
+                case 'after_every_2_waves':
+                    healAmount = Math.ceil(this.player.maxHealth * 0.4); // 40% of max health for every 2nd wave
+                    break;
+                case 'after_every_3_waves':
                     healAmount = Math.ceil(this.player.maxHealth * 0.5); // 50% of max health for every 3rd wave
                     break;
                 default:

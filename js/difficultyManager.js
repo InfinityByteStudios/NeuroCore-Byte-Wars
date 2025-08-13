@@ -2,68 +2,70 @@
 class DifficultyManager {
     constructor() {
         this.currentDifficulty = 'medium'; // Default difficulty
-        
-        // Difficulty configurations based on Planning.md specifications
+          // Difficulty configurations based on new specifications
         this.difficulties = {
             easy: {
                 name: 'Easy',
                 emoji: '🟢',
-                playerHealth: 150,
-                playerSpeedMultiplier: 1.0,    // 100% normal speed - full control
-                enemySpeedMultiplier: 1.0,     // Normal speed
-                enemyHealthMultiplier: 0.8,    // 20% less health
-                enemyDamageMultiplier: 0.7,    // 30% less damage
-                overclockChargeMultiplier: 1.5, // 50% faster charge
-                waveSpawnMultiplier: 0.7,      // 30% fewer enemies
-                dashCooldownMultiplier: 0.7,   // 30% faster dash recovery
-                healingType: 'during_wave',    // Heal during waves
-                healingRate: 2,                // HP per second during waves
-                upgradeDropMultiplier: 1.3     // 30% more upgrade drops
+                playerHealth: 100,  // Updated to 100 as specified
+                playerSpeedMultiplier: 1.0,
+                enemySpeedMultiplier: 1.0,
+                enemyHealthMultiplier: 0.8,
+                enemyDamageMultiplier: 0.7,
+                overclockChargeMultiplier: 1.5,
+                waveEnemyCount: { min: 3, max: 7 },  // 3-7 enemies per wave
+                dashCooldownMultiplier: 0.7,
+                healingType: 'after_each_wave',  // Heal after each wave
+                healingRate: 0,
+                upgradeDropMultiplier: 1.3,
+                healthDropsEnabled: false  // No health drops
             },
             medium: {
                 name: 'Medium',
                 emoji: '🟡',
                 playerHealth: 100,
-                playerSpeedMultiplier: 0.95,   // 95% speed - slightly reduced mobility
-                enemySpeedMultiplier: 1.0,     // Normal speed
-                enemyHealthMultiplier: 1.0,    // Normal health
-                enemyDamageMultiplier: 1.0,    // Normal damage
-                overclockChargeMultiplier: 1.0, // Normal charge rate
-                waveSpawnMultiplier: 1.0,      // Normal enemy count
-                dashCooldownMultiplier: 1.0,   // Normal dash cooldown
-                healingType: 'after_wave',     // Heal after every wave
-                healingRate: 0,                // No gradual healing
-                upgradeDropMultiplier: 1.0     // Normal upgrade drops
+                playerSpeedMultiplier: 0.95,
+                enemySpeedMultiplier: 1.0,
+                enemyHealthMultiplier: 1.0,
+                enemyDamageMultiplier: 1.0,
+                overclockChargeMultiplier: 1.0,
+                waveEnemyCount: { min: 7, max: 10 },  // 7-10 enemies per wave
+                dashCooldownMultiplier: 1.0,
+                healingType: 'after_every_2_waves',  // Heal after every 2 waves
+                healingRate: 0,
+                upgradeDropMultiplier: 1.0,
+                healthDropsEnabled: false  // No health drops
             },
             hard: {
                 name: 'Hard',
                 emoji: '🔴',
                 playerHealth: 100,
-                playerSpeedMultiplier: 0.90,   // 90% speed - requires better positioning
-                enemySpeedMultiplier: 1.0,     // Normal speed
-                enemyHealthMultiplier: 1.2,    // 20% more health
-                enemyDamageMultiplier: 1.2,    // 20% more damage
-                overclockChargeMultiplier: 0.7, // 30% slower charge
-                waveSpawnMultiplier: 1.4,      // 40% more enemies
-                dashCooldownMultiplier: 1.0,   // Normal dash cooldown
-                healingType: 'every_3_waves',  // Heal only every 3 waves
-                healingRate: 0,                // No gradual healing
-                upgradeDropMultiplier: 1.0     // Normal upgrade drops
+                playerSpeedMultiplier: 0.90,
+                enemySpeedMultiplier: 1.0,
+                enemyHealthMultiplier: 1.2,
+                enemyDamageMultiplier: 1.2,
+                overclockChargeMultiplier: 0.7,
+                waveEnemyCount: { min: 10, max: 15 },  // 10-15 enemies per wave
+                dashCooldownMultiplier: 1.0,
+                healingType: 'after_every_3_waves',  // Heal after every 3 waves
+                healingRate: 0,                upgradeDropMultiplier: 1.0,
+                healthDropsEnabled: false  // No health drops
             },
             extreme: {
                 name: 'Extreme',
                 emoji: '☠️',
-                playerHealth: 80,
-                playerSpeedMultiplier: 0.80,   // 80% speed - heavy, requires mastery
-                enemySpeedMultiplier: 1.0,     // Normal speed
-                enemyHealthMultiplier: 1.5,    // 50% more health
-                enemyDamageMultiplier: 1.5,    // 50% more damage
-                overclockChargeMultiplier: 0.5, // 50% slower charge
-                waveSpawnMultiplier: 1.8,      // 80% more enemies
-                dashCooldownMultiplier: 1.0,   // Normal dash cooldown
-                healingType: 'never',          // No healing ever
-                healingRate: 0,                // No gradual healing
-                upgradeDropMultiplier: 0.8     // 20% fewer upgrade drops
+                playerHealth: 100,  // Updated to 100 as specified
+                playerSpeedMultiplier: 0.80,
+                enemySpeedMultiplier: 1.0,
+                enemyHealthMultiplier: 1.5,
+                enemyDamageMultiplier: 1.5,
+                overclockChargeMultiplier: 0.5,
+                waveEnemyCount: { min: 15, max: 25 },  // 15+ enemies per wave
+                dashCooldownMultiplier: 1.0,
+                healingType: 'never',  // No healing after waves
+                healingRate: 0,
+                upgradeDropMultiplier: 0.8,
+                healthDropsEnabled: true  // Health drops appear (but rare)
             }
         };
         
@@ -184,24 +186,20 @@ class DifficultyManager {
     
     // Get base enemy damage (for reference)
     getEnemyBaseDamage(enemyType) {
-        return this.baseEnemyDamage[enemyType] || 5;
-    }
+        return this.baseEnemyDamage[enemyType] || 5;    }
     
-    // Apply wave spawn multiplier
-    getWaveSpawnMultiplier() {
-        return this.getCurrentDifficulty().waveSpawnMultiplier;
-    }
-    
-    // Check if player should heal
+      // Check if player should heal
     shouldHealPlayer(waveNumber, duringWave = false) {
         const config = this.getCurrentDifficulty();
         
         switch (config.healingType) {
             case 'during_wave':
                 return duringWave; // Heal during waves only
-            case 'after_wave':
-                return !duringWave; // Heal after waves only
-            case 'every_3_waves':
+            case 'after_each_wave':
+                return !duringWave; // Heal after each wave
+            case 'after_every_2_waves':
+                return !duringWave && (waveNumber % 2 === 0); // Heal after every 2nd wave
+            case 'after_every_3_waves':
                 return !duringWave && (waveNumber % 3 === 0); // Heal after every 3rd wave
             case 'never':
                 return false; // Never heal
@@ -234,5 +232,22 @@ class DifficultyManager {
             waveSize: `${Math.round(config.waveSpawnMultiplier * 100)}%`,
             healingType: config.healingType.replace('_', ' ').toUpperCase()
         };
+    }
+    
+    // Get wave enemy count range based on difficulty
+    getWaveEnemyCount() {
+        const config = this.getCurrentDifficulty();
+        if (config.waveEnemyCount) {
+            const min = config.waveEnemyCount.min;
+            const max = config.waveEnemyCount.max;
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        // Fallback to old system if not configured
+        return Math.floor(Math.random() * 5) + 5;
+    }
+    
+    // Check if health drops should be enabled
+    areHealthDropsEnabled() {
+        return this.getCurrentDifficulty().healthDropsEnabled || false;
     }
 }

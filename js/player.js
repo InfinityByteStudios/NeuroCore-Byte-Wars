@@ -1,35 +1,25 @@
-class Player {    constructor(x, y) {        this.x = x;
+class Player {    constructor(x, y, shopSystem = null) {        this.x = x;
         this.y = y;
         this.radius = 15;
+        
+        // Shop system reference for skin management
+        this.shopSystem = shopSystem;
         
         // Speed properties
         this.baseSpeed = 280; // Base speed in pixels per second
         this.speedMultiplier = 1.0; // Adjusted by difficulty
-        this.speed = this.baseSpeed; // Current speed (will be modified by difficulty)
-        
-        // Visual properties
+        this.speed = this.baseSpeed; // Current speed (will be modified by difficulty)          // Visual properties
         this.color = '#00ffff';
         this.aimDirection = 0; // angle in radians
         
-        // Sprite properties
-        this.spriteLoaded = false;
-        this.spriteSize = 65; // Size to render the sprite (diameter)
-        this.sprite = new Image();
-
-        this.sprite.onload = () => {
-            this.spriteLoaded = true;
-            console.log('✅ Player sprite loaded successfully');
-        };
-
-        this.sprite.onerror = () => {
-            console.error('❌ Failed to load player sprite');
-            this.spriteLoaded = false;
-        };
-
-        // Set the source after setting up event handlers
-        this.sprite.src = 'assets/Sprites/sprite_0.png';
+        // Sprite properties for skin system
+        this.currentSprite = null;
+        this.overclockSprite = null;
+        this.useSpriteMode = false;
         
-        // Movement smoothing
+        // Load initial skin
+        this.loadCurrentSkin();
+          // Movement smoothing
         this.velocity = { x: 0, y: 0 };
         this.friction = 0.85;
         
@@ -396,11 +386,32 @@ class Player {    constructor(x, y) {        this.x = x;
         this.overclockChargePerKill = this.baseOverclockChargePerKill;
         
         console.log('🔄 Player stats reset to base values');
-    }
-    
-    shoot() {
-        const currentTime = Date.now();
-        const bullet = this.weapon.shoot(this.x, this.y, this.aimDirection, currentTime);
+    }    shoot() {
+        const currentTime = Date.now();        // Calculate bullet spawn position
+        let bulletSpawnX, bulletSpawnY;
+          if (this.useSpriteMode) {
+            // For sprite mode - position bullet spawn at weapon hole
+            console.log('Using sprite mode - weapon hole positioning');
+            // Tweak these offsets to align with the weapon hole on Main Sprite.png
+            const forwardOffset = 30;  // Forward from center (increase if bullet is too close to core)
+            const sideOffset = 11;     // Right from center (increase if bullet is too far left)
+            // Forward component (in direction of aim)
+            const forwardX = Math.cos(this.aimDirection) * forwardOffset;
+            const forwardY = Math.sin(this.aimDirection) * forwardOffset;
+            // Side component (perpendicular to aim direction, positive = right)
+            const sideX = -Math.sin(this.aimDirection) * sideOffset;
+            const sideY = Math.cos(this.aimDirection) * sideOffset;
+            bulletSpawnX = this.x + forwardX + sideX;
+            bulletSpawnY = this.y + forwardY + sideY;
+        } else {
+            // For shape mode - use stick tip
+            console.log('Using shape mode bullet spawn');
+            const stickLength = 25;
+            bulletSpawnX = this.x + Math.cos(this.aimDirection) * stickLength;
+            bulletSpawnY = this.y + Math.sin(this.aimDirection) * stickLength;
+        }
+        
+        const bullet = this.weapon.shoot(bulletSpawnX, bulletSpawnY, this.aimDirection, currentTime);
         if (bullet) {
             this.bullets.push(bullet);
         }
@@ -550,63 +561,55 @@ class Player {    constructor(x, y) {        this.x = x;
             currentColor = 'rgba(0, 255, 255, 0.4)'; // Semi-transparent cyan
             glowColor = '#00ffff';
             glowIntensity = 20;
+        }        // Apply glow effect if needed
+        if (glowIntensity > 0) {
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = glowIntensity;
         }
 
-        if (this.spriteLoaded) {
-            // Create a temporary canvas to handle the sprite coloring
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = this.spriteSize;
-            tempCanvas.height = this.spriteSize;
-            const tempCtx = tempCanvas.getContext('2d');
+        // Save context for rotation
+        ctx.save();        // Move to player position and rotate to face aim direction
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.aimDirection);
 
-            // Draw the sprite on the temp canvas
-            tempCtx.drawImage(
-                this.sprite,
-                0,
-                0,
-                this.spriteSize,
-                this.spriteSize
-            );
-
-            // If we need to apply a color overlay
-            if (currentColor !== this.color) {
-                // Use source-in to only color the non-transparent pixels
-                tempCtx.globalCompositeOperation = 'source-in';
-                tempCtx.fillStyle = currentColor;
-                tempCtx.fillRect(0, 0, this.spriteSize, this.spriteSize);
-            }
-
-            // Apply glow effect if needed
-            if (glowIntensity > 0) {
-                ctx.shadowColor = glowColor;
-                ctx.shadowBlur = glowIntensity;
-            }
-
-            // Save context for rotation
-            ctx.save();
+        // Choose sprite based on state and skin mode
+        if (this.useSpriteMode && this.currentSprite) {
+            // Use sprite mode - draw the actual sprite image
+            let spriteToUse = this.currentSprite;
             
-            // Move to player position and rotate to face aim direction
-            ctx.translate(this.x, this.y);
-            ctx.rotate(this.aimDirection + Math.PI / 2); // Add PI/2 to align sprite properly
-
-            // Draw the processed sprite
-            ctx.drawImage(
-                tempCanvas,
-                -this.spriteSize / 2,
-                -this.spriteSize / 2,
-                this.spriteSize,
-                this.spriteSize
-            );
-
-            // Restore context
-            ctx.restore();
+            // Use overclock sprite during overclock if available
+            if (this.isOverclocked && this.overclockSprite) {
+                spriteToUse = this.overclockSprite;
+            }
+            
+            // Draw sprite centered and scaled to player size
+            const spriteSize = this.radius * 4; // Made significantly larger
+            ctx.drawImage(spriteToUse, -spriteSize/2, -spriteSize/2, spriteSize, spriteSize);
         } else {
-            // Fallback to circle if sprite isn't loaded
+            // Use shape mode (original circle with stick design)
+            // Main body circle
             ctx.fillStyle = currentColor;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Weapon stick (extends from center in aim direction)
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); // Start from center
+            ctx.lineTo(25, 0); // Stick extends rightward (which becomes aim direction due to rotation)
+            ctx.stroke();
+
+            // Weapon end circle (at the tip where bullets spawn)
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(25, 0, 4, 0, Math.PI * 2);
             ctx.fill();
         }
+
+        // Restore context
+        ctx.restore();
 
         // Draw glitch effects
         if (this.isGlitched) {
@@ -746,10 +749,67 @@ class Player {    constructor(x, y) {        this.x = x;
             }
         }
     }
-    
-    setSpeedMultiplier(multiplier) {
+      setSpeedMultiplier(multiplier) {
         this.speedMultiplier = multiplier;
         this.speed = this.baseSpeed * this.speedMultiplier;
         console.log(`🏃 Player speed adjusted: ${Math.round(this.speed)} (${Math.round(this.speedMultiplier * 100)}% of base)`);
+    }
+    
+    // Method to load current skin from shop system
+    loadCurrentSkin() {
+        if (this.shopSystem) {
+            const currentSkin = this.shopSystem.getCurrentSkin();
+            if (currentSkin) {
+                this.skin = currentSkin; // Store the full skin object
+                this.color = currentSkin.color; // Use skin color
+                this.useSpriteMode = currentSkin.isSpriteMode || false;
+                
+                // Load sprites if in sprite mode
+                if (this.useSpriteMode && currentSkin.spriteFile) {
+                    this.loadSprite(currentSkin.spriteFile, currentSkin.overclockSprite);
+                } else {
+                    this.currentSprite = null;
+                    this.overclockSprite = null;
+                }
+                
+                console.log(`🎨 Loaded skin: ${currentSkin.name} with color ${currentSkin.color} (sprite mode: ${this.useSpriteMode})`);
+            }
+        } else {
+            // Fallback to default color and default skin object
+            this.color = '#00ffff';
+            this.skin = { type: 'shape', name: 'Default' };
+        }
+    }
+    
+    // Load sprite images
+    loadSprite(spriteFile, overclockSpriteFile = null) {
+        if (spriteFile) {
+            this.currentSprite = new Image();
+            this.currentSprite.src = `assets/Sprites/${spriteFile}`;
+            this.currentSprite.onload = () => {
+                console.log(`🖼️ Loaded sprite: ${spriteFile}`);
+            };
+            this.currentSprite.onerror = () => {
+                console.warn(`⚠️ Failed to load sprite: ${spriteFile}`);
+                this.currentSprite = null;
+            };
+        }
+        
+        if (overclockSpriteFile) {
+            this.overclockSprite = new Image();
+            this.overclockSprite.src = `assets/Sprites/${overclockSpriteFile}`;
+            this.overclockSprite.onload = () => {
+                console.log(`🖼️ Loaded overclock sprite: ${overclockSpriteFile}`);
+            };
+            this.overclockSprite.onerror = () => {
+                console.warn(`⚠️ Failed to load overclock sprite: ${overclockSpriteFile}`);
+                this.overclockSprite = null;
+            };
+        }
+    }
+    
+    // Call this method to update skin when shop selection changes
+    updateSkin() {
+        this.loadCurrentSkin();
     }
 }

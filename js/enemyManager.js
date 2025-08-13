@@ -127,29 +127,28 @@ class EnemyManager {    constructor(arena, difficultyManager = null) {
             number: waveNumber,
             enemies: []
         };
-        
-        // Phase 1: Only basic enemies (datawisp) for first 5 waves
+          // Phase 1: Only basic enemies (datawisp) for first 5 waves
         if (waveNumber <= 5) {
-            // Simple progression: 3-8 basic enemies
-            let baseEnemyCount = Math.min(3 + waveNumber, 8);
-            
-            // Apply difficulty multiplier if available
+            // Use difficulty-based enemy count
+            let baseEnemyCount;
             if (this.difficultyManager) {
-                const multiplier = this.difficultyManager.getWaveSpawnMultiplier();
-                baseEnemyCount = Math.ceil(baseEnemyCount * multiplier);
+                baseEnemyCount = this.difficultyManager.getWaveEnemyCount();
+            } else {
+                // Fallback to simple progression
+                baseEnemyCount = Math.min(3 + waveNumber, 8);
             }
             
             // Only spawn datawisp enemies in phase 1
             for (let i = 0; i < baseEnemyCount; i++) {
                 config.enemies.push('datawisp');
             }        } else {
-            // Original complex wave system for later phases
-            let baseEnemyCount = Math.min(5 + Math.floor(waveNumber / 2), 18);
-            
-            // Apply difficulty multiplier if available
+            // Use difficulty-based enemy count for later phases
+            let baseEnemyCount;
             if (this.difficultyManager) {
-                const multiplier = this.difficultyManager.getWaveSpawnMultiplier();
-                baseEnemyCount = Math.ceil(baseEnemyCount * multiplier);
+                baseEnemyCount = this.difficultyManager.getWaveEnemyCount();
+            } else {
+                // Fallback to original complex system
+                baseEnemyCount = Math.min(5 + Math.floor(waveNumber / 2), 18);
             }
             
             // Enemy type distribution changes with wave progression
@@ -172,28 +171,8 @@ class EnemyManager {    constructor(arena, difficultyManager = null) {
                     enemyType = 'bitbug';
                 }
                 config.enemies.push(enemyType);
-            }
-              // Add bonus enemies for higher waves
-            if (waveNumber >= 10) {
-                let bonusEnemies = Math.floor(waveNumber / 5);
-                
-                // Apply difficulty multiplier to bonus enemies too
-                if (this.difficultyManager) {
-                    const multiplier = this.difficultyManager.getWaveSpawnMultiplier();
-                    bonusEnemies = Math.ceil(bonusEnemies * multiplier);
-                }
-                for (let i = 0; i < bonusEnemies; i++) {
-                    // Higher chance of special enemies in bonus enemies for late waves
-                    const rand = Math.random();
-                    if (waveNumber >= 12 && rand < 0.3) {
-                        config.enemies.push('memoryleech');
-                    } else if (waveNumber >= 8 && rand < 0.5) {
-                        config.enemies.push('syntaxbreaker');
-                    } else {
-                        config.enemies.push('bitbug');
-                    }
-                }
-            }
+            }              // Note: Bonus enemies are now handled by the difficulty-based enemy count
+            // No additional bonus enemies needed as the difficulty system handles wave scaling
         }
         
         // Shuffle the enemy spawn order for variety
