@@ -23,11 +23,11 @@ class ModernUI {    constructor() {
             safezoneBar: document.getElementById('safezoneBar'),
             safezoneFill: document.getElementById('safezoneFill'),
             safezoneText: document.getElementById('safezoneText'),
-            safezoneStatus: document.getElementById('safezoneStatus'),              // Stats
+            safezoneStatus: document.getElementById('safezoneStatus'),
+              // Stats
             scoreDisplay: document.getElementById('scoreDisplay'),
             killsDisplay: document.getElementById('killsDisplay'),
             survivalTimeDisplay: document.getElementById('survivalTimeDisplay'),
-            bytecoinsDisplay: document.getElementById('bytecoinsDisplay'),
             // Wave system
             waveTitle: document.getElementById('waveTitle'),
             waveStatus: document.getElementById('waveStatus'),
@@ -84,7 +84,7 @@ class ModernUI {    constructor() {
         this.updateHealth(gameData.player);
         this.updateOverclock(gameData.player);
         this.updateDash(gameData.player);        this.updateSafeZone(gameData.arena);
-        this.updateStats(gameData.score, gameData.kills, gameData.survivalTime, gameData.shopSystem);        
+        this.updateStats(gameData.score, gameData.kills, gameData.survivalTime);        
         this.updateWave(gameData.enemyManager);
         this.updateUpgrades(gameData.upgradeSystem);
         this.updateMiniMap(gameData);
@@ -273,14 +273,9 @@ class ModernUI {    constructor() {
             }
             statusDiv.className = 'safezone-status';
         }
-    }    updateStats(score, kills, survivalTime = 0, shopSystem = null) {
+    }      updateStats(score, kills, survivalTime = 0) {
         this.elements.scoreDisplay.textContent = `SCORE: ${score}`;
         this.elements.killsDisplay.textContent = `KILLS: ${kills}`;
-        
-        // Update ByteCoins if shop system is available
-        if (shopSystem && this.elements.bytecoinsDisplay) {
-            this.elements.bytecoinsDisplay.textContent = `BYTECOINS: ${shopSystem.byteCoins}`;
-        }
         
         // Format survival time as MM:SS
         // Ensure we have a valid number
